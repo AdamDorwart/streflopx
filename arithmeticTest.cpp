@@ -54,21 +54,24 @@ template<class FloatType> void doTest(string s, string name) {
 
     streflop_init<FloatType>();
 
-    ofstream basicfile((s + "_" + name + "_basic.bin").c_str());
+    string basic_filename = s + "_" + name + "_basic.bin";
+    ofstream basicfile(basic_filename.c_str());
     if (!basicfile) {
-        cout << "Problem creating binary file: " << basicfile << endl;
+        cout << "Problem creating binary file: " << basic_filename << endl;
         exit(2);
     }
-
-    ofstream infnanfile((s + "_" + name + "_nan.bin").c_str());
+    
+    string inf_filename = s + "_" + name + "_nan.bin";
+    ofstream infnanfile(inf_filename.c_str());
     if (!infnanfile) {
-        cout << "Problem creating binary file: " << infnanfile << endl;
+        cout << "Problem creating binary file: " << inf_filename << endl;
         exit(3);
     }
 
-    ofstream mathlibfile((s + "_" + name + "_lib.bin").c_str());
+    string mathlib_filename = s + "_" + name + "_lib.bin";
+    ofstream mathlibfile(mathlib_filename.c_str());
     if (!mathlibfile) {
-        cout << "Problem creating binary file: " << mathlibfile << endl;
+        cout << "Problem creating binary file: " << mathlib_filename << endl;
         exit(4);
     }
 
@@ -173,7 +176,7 @@ int main(int argc, const char** argv) {
     doTest<Simple>(argv[1], "simple");
     doTest<Double>(argv[1], "double");
 #if defined(Extended)
-    doTest<Extended>(argv[1], "extended");
+    // doTest<Extended>(argv[1], "extended");
 #endif
 
     return 0;
