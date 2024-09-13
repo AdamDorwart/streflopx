@@ -176,7 +176,7 @@ int main(int argc, const char** argv) {
     doTest<Simple>(argv[1], "simple");
     doTest<Double>(argv[1], "double");
 #if defined(Extended)
-    // doTest<Extended>(argv[1], "extended");
+    doTest<Extended>(argv[1], "extended");
 #endif
 
     return 0;
