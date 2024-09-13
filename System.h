@@ -1,6 +1,7 @@
 /*
-    streflop: STandalone REproducible FLOating-Point
-    Nicolas Brodu, 2006
+    streflop: STandalone REproducible FLOating-Point eXtended
+    Nicolas Brodu, 2006 (original streflop author)
+    Adam Dorwart, 2024 (streflopx author)
     Code released according to the GNU Lesser General Public License
 
     Heavily relies on GNU Libm, itself depending on netlib fplibm, GNU MP, and IBM MP lib.
@@ -13,12 +14,14 @@
 #ifndef STREFLOP_SYSTEM_H
 #define STREFLOP_SYSTEM_H
 
-#if defined(STREFLOP_SSE) || defined(STREFLOP_X87)
+#if defined(STREFLOP_SSE) || defined(STREFLOP_X87) || defined(STREFLOP_NEON)
 // SSE or X87 machines are little-endian
+// NEON machines are mostly little-endian
 #define __BYTE_ORDER 1234
 #define __FLOAT_WORD_ORDER 1234
 
 // Softfloat or other unknown FPU. TODO: Try some header autodetect?
+// TODO Detect big endian on NEON
 #else
 
 #define __BYTE_ORDER 1234

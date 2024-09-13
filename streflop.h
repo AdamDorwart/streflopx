@@ -49,8 +49,14 @@ namespace streflop {
     typedef SoftFloatWrapper<96> Extended;
     #define Extended Extended
 
-#else
+#elif defined(STREFLOP_NEON)
 
+    // NEON always uses native types, denormals are handled by FPU flags
+    typedef float Simple;
+    typedef double Double;
+    #undef Extended
+
+#else
 #error STREFLOP: Invalid combination or unknown FPU type.
 
 #endif

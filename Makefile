@@ -26,6 +26,9 @@ endif
 ifdef STREFLOP_SSE
 FPUNAME=-sse
 endif
+ifdef STREFLOP_NEON
+FPUNAME=-neon
+endif
 ifdef STREFLOP_SOFT
 FPUNAME=-soft
 endif
@@ -36,8 +39,10 @@ endif
 TARGETS = libm/flt-target libm/dbl-target
 LIBM_OBJECTS = $(flt-32-objects) $(dbl-64-objects)
 ifndef STREFLOP_SSE
+ifndef STREFLOP_NEON
 TARGETS += libm/ldbl-target
 LIBM_OBJECTS += $(ldbl-96-objects)
+endif
 endif
 
 all: streflop.a libstreflop$(FPUNAME)$(NDNAME).so
@@ -70,7 +75,7 @@ endif
 libstreflop$(FPUNAME)$(NDNAME).so: Math.o Random.o ${USE_SOFT_BINARY}
 	$(MAKE) -C libm
 	@rm -f libstreflop$(FPUNAME)$(NDNAME).so
-	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
 
 arithmeticTest$(EXE_SUFFIX): arithmeticTest.cpp streflop.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) arithmeticTest.cpp streflop.a -o $@
