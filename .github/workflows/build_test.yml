@@ -54,7 +54,7 @@ jobs:
         shell: bash
 
       - name: Build arithmetic test
-        run: make arithmeticTest
+        run: make ${{ matrix.build_flags }} arithmeticTest
 
       - name: Run arithmetic test
         run: ./arithmeticTest result-${{ env.PLATFORM }}
