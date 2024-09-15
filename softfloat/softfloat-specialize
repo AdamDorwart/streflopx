@@ -12,8 +12,12 @@ CHANGES:
 
 Nicolas Brodu, 2006
 =============================================================================*/
-    #include <unistd.h>
+#ifdef _WIN32
+    #include <Windows.h>
+#else
     #include <signal.h>
+    #include <unistd.h>
+#endif
     #include "../streflop.h"
 
 namespace streflop {
@@ -95,7 +99,11 @@ void float_raise( int8 flags )
 
     // Send SIGFPE signal to current process
     if (trap==1) {
+#ifdef _WIN32
+        RaiseException(EXCEPTION_FLT_INVALID_OPERATION, 0, 0, NULL);
+#else
         kill(getpid(), SIGFPE);
+#endif
     }
 }
 
