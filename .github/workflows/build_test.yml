@@ -54,7 +54,7 @@ jobs:
       - uses: sandervocke/setup-qemu-container@v1
         if: ${{ matrix.platform == 'linux-arm64-neon' }}
         with:
-          container: ubuntu:latest
+          container: gcc:latest
           arch: arm64
       - name: Setup Shell Wrapper
         uses: sandervocke/setup-shell-wrapper@v1
