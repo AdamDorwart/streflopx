@@ -58,8 +58,14 @@ jobs:
           arch: arm64
 
       - name: Set up environment
-        run: echo "PLATFORM=${{ matrix.platform }}" >> $GITHUB_ENV
         shell: bash
+        run: |
+          echo "PLATFORM=${{ matrix.platform }}" >> $GITHUB_ENV
+          if [[ "${{ matrix.platform }}" == "linux-arm64-neon" ]]; then
+            echo "WRAP_SHELL=run-in-container.sh" >> $GITHUB_ENV
+          else
+            echo "WRAP_SHELL=bash" >> $GITHUB_ENV
+          fi
 
       - name: Build arithmetic test
         run: make ${{ matrix.build_flags }} arithmeticTest
