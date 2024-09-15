@@ -1,0 +1,60 @@
+name: Streflopx Build & Test
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: windows-latest
+            platform: windows-x64
+          - os: macos-latest
+            platform: macos-arm64
+          - os: macos-13
+            platform: macos-x64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up environment
+        run: echo "PLATFORM=${{ matrix.platform }}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Build arithmetic test
+        run: make arithmeticTest
+
+      - name: Run arithmetic test
+        run: ./arithmeticTest result-${{ env.PLATFORM }}
+
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: results-${{ env.PLATFORM }}
+          path: result-${{ env.PLATFORM }}*
+
+  compare-results:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download all results
+        uses: actions/download-artifact@v2
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Build compare_floats
+        run: make compare_floats
+
+      - name: Compare results
+        run: |
+          ./compare_floats \
+          results-linux-x64/result-linux-x64 \
+          results-windows-x64/result-windows-x64 \
+          results-macos-x64/result-macos-x64 \
+          results-macos-arm64/result-macos-arm64
