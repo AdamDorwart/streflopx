@@ -23,9 +23,6 @@ jobs:
             platform: macos-x64
 
     runs-on: ${{ matrix.os }}
-    env:
-      FORCE_COLOR: "1"
-      TERM: xterm-256color
     steps:
       - uses: actions/checkout@v4
 
@@ -46,11 +43,8 @@ jobs:
           path: result-${{ env.PLATFORM }}*
 
   compare-results:
-    needs: build-and-test
+    needs: build-test-matrix
     runs-on: ubuntu-latest
-    env:
-      FORCE_COLOR: 3
-      TERM: xterm-256color
     steps:
       - uses: actions/checkout@v4
 
