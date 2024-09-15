@@ -13,14 +13,37 @@ jobs:
     strategy:
       matrix:
         include:
+          # Linux x64 builds
           - os: ubuntu-latest
             platform: linux-x64
+            build_flags: STREFLOP_SOFT=1
+          - os: ubuntu-latest
+            platform: linux-x64
+            build_flags: STREFLOP_SSE=1
+
+          # Windows x64 builds
           - os: windows-latest
             platform: windows-x64
-          - os: macos-latest
-            platform: macos-arm64
+            build_flags: STREFLOP_SOFT=1
+          - os: windows-latest
+            platform: windows-x64
+            build_flags: STREFLOP_SSE=1
+
+          # macOS x64 builds
           - os: macos-13
             platform: macos-x64
+            build_flags: STREFLOP_SOFT=1
+          - os: macos-13
+            platform: macos-x64
+            build_flags: STREFLOP_SSE=1
+
+          # macOS ARM64 builds
+          - os: macos-latest
+            platform: macos-arm64
+            build_flags: STREFLOP_SOFT=1
+          - os: macos-latest
+            platform: macos-arm64
+            build_flags: STREFLOP_NEON=1
 
     runs-on: ${{ matrix.os }}
     steps:

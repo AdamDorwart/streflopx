@@ -85,14 +85,16 @@ randomTest$(EXE_SUFFIX): randomTest.cpp streflop.a
 
 .PHONY : clean package
 clean:
-	@rm -fv *.o                                  \
+	@rm -rfv *.o                                  \
 		streflop.a                              \
 		libstreflop.a                           \
 		libstreflop$(FPUNAME)$(NDNAME).so       \
 		libstreflop$(FPUNAME)$(NDNAME).so.0     \
 		libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 \
 		arithmeticTest$(EXE_SUFFIX)             \
+		arithmeticTest.dSYM										  \
 		randomTest$(EXE_SUFFIX)                 \
+		randomTest.dSYM													\
 		${USE_SOFT_BINARY}
 	$(MAKE) -C libm clean
 
