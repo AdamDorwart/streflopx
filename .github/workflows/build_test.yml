@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: sandervocke/setup-qemu-container@v1
-        if: ${{ matrix.platform == 'linux-x64-neon' }}
+        if: ${{ matrix.platform == 'linux-arm64-neon' }}
         with:
           container: arm64v8/ubuntu
           arch: arm64
