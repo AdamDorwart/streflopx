@@ -74,7 +74,12 @@ jobs:
         run: make ${{ matrix.build_flags }} arithmeticTest
 
       - name: Run arithmetic test
+        if: ${{ matrix.platform != 'windows-x64-sse' }}
         shell: wrap-shell {0}
+        run: ./arithmeticTest result-${{ env.PLATFORM }}
+
+      - name: Run arithmetic test (Windows)
+        if: ${{ matrix.platform == 'windows-x64-sse' }}
         run: ./arithmeticTest result-${{ env.PLATFORM }}
 
       - name: Upload results
