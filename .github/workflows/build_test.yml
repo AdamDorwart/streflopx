@@ -68,9 +68,11 @@ jobs:
           fi
 
       - name: Build arithmetic test
+        shell: wrap-shell {0}
         run: make ${{ matrix.build_flags }} arithmeticTest
 
       - name: Run arithmetic test
+        shell: wrap-shell {0}
         run: ./arithmeticTest result-${{ env.PLATFORM }}
 
       - name: Upload results
