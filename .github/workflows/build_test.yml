@@ -22,9 +22,9 @@ jobs:
             build_flags: STREFLOP_SSE=1
 
           # Windows x64 builds
-          - os: windows-latest
-            platform: windows-x64-soft
-            build_flags: STREFLOP_SOFT=1
+          # - os: windows-latest
+          #   platform: windows-x64-soft
+          #   build_flags: STREFLOP_SOFT=1
           - os: windows-latest
             platform: windows-x64-sse
             build_flags: STREFLOP_SSE=1
