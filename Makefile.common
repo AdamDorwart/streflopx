@@ -38,7 +38,7 @@ endif
 
 # Options for correctness of code.
 # -ffloat-store is not needed since the FPU flags are set by the streflop_init functions
-CXXFLAGS += -ffp-contract=off -frounding-math -fsignaling-nans -fno-strict-aliasing -Wall
+CXXFLAGS += -ffp-contract=off -frounding-math -fsignaling-nans -fno-strict-aliasing -Wall -fdiagnostics-color
 
 # The next options should match/select the FPU
 ifdef STREFLOP_X87

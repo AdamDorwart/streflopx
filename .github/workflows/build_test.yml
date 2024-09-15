@@ -1,4 +1,4 @@
-name: Cross-Platform Arithmetic Test and Compare
+name: Build & Test
 
 on:
   push:
