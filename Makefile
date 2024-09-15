@@ -76,6 +76,11 @@ libstreflop$(FPUNAME)$(NDNAME).so: Math.o Random.o ${USE_SOFT_BINARY}
 	$(MAKE) -C libm
 	@rm -f libstreflop$(FPUNAME)$(NDNAME).so
 	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+ifeq ($(detected_OS),Darwin)
+	$(CXX) -dynamiclib -o libstreflop$(FPUNAME)$(NDNAME).dylib $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+else
+	$(CXX) -shared -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+endif
 
 arithmeticTest$(EXE_SUFFIX): arithmeticTest.cpp streflop.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) arithmeticTest.cpp streflop.a -o $@

@@ -137,7 +137,7 @@ template<class FloatType> void doTest(string s, string name) {
 
     // Call the Math functions
     for (int i=0; i<10000; ++i) {
-        f = tanh(cbrt(fabs(log2(sin(FloatType(RandomII(0,i)))+FloatType(2.0)))+FloatType(1.0)));
+        f = streflop::tanh(streflop::cbrt(streflop::fabs(streflop::log2(streflop::sin(FloatType(RandomII(0,i)))+FloatType(2.0)))+FloatType(1.0)));
         writeFloat(mathlibfile, f);
     }
 

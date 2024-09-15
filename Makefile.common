@@ -32,7 +32,11 @@ $(info Detected OS is [$(detected_OS)])
 
 # 4. Optional, removes false dependency on libm
 LDFLAGS :=
-ifneq ($(detected_OS),Darwin)
+ifeq ($(detected_OS),Darwin)
+    # macOS (Darwin) specific flags
+    LDFLAGS += -Wl,-dead_strip
+else
+    # Non-Darwin (e.g., Linux) flags
     LDFLAGS += -Wl,--as-needed
 endif
 
