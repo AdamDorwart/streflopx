@@ -3,15 +3,15 @@
 ####################################
 
 # 1. Change this to your compiler (g++ 4.1 is recommended). If you're not using g++, check for equivalent options below.
-CXX=g++-14
+CXX=g++
 # CXX=em++
 
 # 2. Set the correct type for your architecture
 # 2a: One of:
-STREFLOP_NEON = 1
+# STREFLOP_NEON = 1
 # STREFLOP_SSE = 1
 # STREFLOP_X87 = 1
-# STREFLOP_SOFT = 1
+STREFLOP_SOFT = 1
 # 2b. And optionally:
 #STREFLOP_NO_DENORMALS = 1
 
