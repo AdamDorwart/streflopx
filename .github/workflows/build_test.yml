@@ -56,6 +56,8 @@ jobs:
         with:
           container: arm64v8/ubuntu
           arch: arm64
+      - name: Setup Shell Wrapper
+        uses: sandervocke/setup-shell-wrapper@v1
 
       - name: Set up environment
         shell: bash
