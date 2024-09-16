@@ -13,83 +13,68 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux x64 builds
-          # - os: ubuntu-latest
-          #   platform: linux-x64-soft
-          #   build_flags: STREFLOP_SOFT=1
           - os: ubuntu-latest
             platform: linux-x64-sse
             build_flags: STREFLOP_SSE=1
-
-          # Windows x64 builds
-          # - os: windows-latest
-          #   platform: windows-x64-soft
-          #   build_flags: STREFLOP_SOFT=1
+          - os: ubuntu-latest
+            platform: linux-x64-x87
+            build_flags: STREFLOP_X87=1
           - os: windows-latest
             platform: windows-x64-sse
             build_flags: STREFLOP_SSE=1
-
-          # macOS x64 builds
-          # - os: macos-13
-          #   platform: macos-x64-soft
-          #   build_flags: STREFLOP_SOFT=1
+          - os: windows-latest
+            platform: windows-x64-x87
+            build_flags: STREFLOP_X87=1
           - os: macos-13
             platform: macos-x64-sse
             build_flags: STREFLOP_SSE=1
-
-          # macOS ARM64 builds
-          # - os: macos-latest
-          #   platform: macos-arm64-soft
-          #   build_flags: STREFLOP_SOFT=1
+          - os: macos-13
+            platform: macos-x64-x87
+            build_flags: STREFLOP_x87=1
           - os: macos-latest
             platform: macos-arm64-neon
-            build_flags: STREFLOP_NEON=1
-          - os: ubuntu-latest
-            platform: linux-arm64-neon
             build_flags: STREFLOP_NEON=1
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: sandervocke/setup-qemu-container@v1
-        if: ${{ matrix.platform == 'linux-arm64-neon' }}
-        with:
-          container: gcc:latest
-          arch: arm64
-      - name: Setup Shell Wrapper
-        uses: sandervocke/setup-shell-wrapper@v1
-
-      - name: Set up environment
-        shell: bash
-        run: |
-          echo "PLATFORM=${{ matrix.platform }}" >> $GITHUB_ENV
-          if [[ "${{ matrix.platform }}" == "linux-arm64-neon" ]]; then
-            echo "WRAP_SHELL=run-in-container.sh" >> $GITHUB_ENV
-          else
-            echo "WRAP_SHELL=bash" >> $GITHUB_ENV
-          fi
 
       - name: Build arithmetic test
-        shell: wrap-shell {0}
         run: make ${{ matrix.build_flags }} arithmeticTest
 
       - name: Run arithmetic test
-        if: ${{ matrix.platform != 'windows-x64-sse' }}
-        shell: wrap-shell {0}
-        run: ./arithmeticTest result-${{ env.PLATFORM }}
-
-      - name: Run arithmetic test (Windows)
-        if: ${{ matrix.platform == 'windows-x64-sse' }}
-        run: ./arithmeticTest result-${{ env.PLATFORM }}
+        run: ./arithmeticTest result-${{ matrix.platform }}
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: results-${{ env.PLATFORM }}
-          path: result-${{ env.PLATFORM }}*
+          name: results-${{ matrix.platform }}
+          path: result-${{ matrix.platform }}*
+
+  build-test-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sandervocke/setup-qemu-container@v1
+        with:
+          container: gcc:latest
+          arch: arm64
+      - uses: sandervocke/setup-shell-wrapper@v1
+
+      - name: Build and run arithmetic test
+        shell: run-in-container.sh {0}
+        run: |
+          make STREFLOP_NEON=1 arithmeticTest
+          ./arithmeticTest result-linux-arm64-neon
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-linux-arm64-neon
+          path: result-linux-arm64-neon*
 
   compare-results:
-    needs: build-test-matrix
+    needs: [build-test-matrix, build-test-linux-arm64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +85,7 @@ jobs:
           path: artifacts
 
       - name: Display structure of downloaded files
-        run: ls -R artifacts
+        run: ls -Rlah artifacts
 
       - name: Build compare_floats
         run: make compareFloats
@@ -112,4 +97,4 @@ jobs:
           artifacts/results-windows-x64-sse/result-windows-x64-sse \
           artifacts/results-macos-x64-sse/result-macos-x64-sse \
           artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
-          artifacts/results-macos-arm64-neon/result-macos-arm64-neon \
+          artifacts/results-macos-arm64-neon/result-macos-arm64-neon

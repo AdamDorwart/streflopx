@@ -13,8 +13,9 @@ bool isNaN(T value) {
 
 template<typename T>
 std::vector<T> readBinaryFile(const std::string& filename) {
-    std::ifstream file(filename.c_str(), std::ios::binary);
+    std::ifstream file(filename, std::ios::binary);
     std::vector<T> data;
+    
     if (!file) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return data;
@@ -25,11 +26,21 @@ std::vector<T> readBinaryFile(const std::string& filename) {
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    // Resize vector to hold the correct number of elements
-    data.resize(size / sizeof(T));
+    if (size % sizeof(T) != 0) {
+        std::cerr << "File size is not a multiple of data type size: " << filename << std::endl;
+        return data;
+    }
+
+    // Reserve space in vector
+    data.reserve(size / sizeof(T));
 
     // Read the data
-    if (!file.read(reinterpret_cast<char*>(data.data()), size)) {
+    T buffer;
+    while (file.read(reinterpret_cast<char*>(&buffer), sizeof(T))) {
+        data.push_back(buffer);
+    }
+
+    if (file.bad()) {
         std::cerr << "Error reading file: " << filename << std::endl;
         data.clear();
     }
