@@ -134,7 +134,8 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
     std::ostringstream log;
     log << "Comparing " << type << " files:\n";
     for (size_t i = 0; i < filenames.size(); ++i) {
-        log << "File: " << filenames[i] << ", Data size: " << headers[i].dataSize << " bytes\n";
+        std::string shortName = filenames[i].substr(filenames[i].find_last_of("/\\") + 1);
+        log << "File: " << shortName << ", Data size: " << headers[i].dataSize << " bytes\n";
     }
     log << "Epsilon: " << std::scientific << std::setprecision(6) << epsilon 
         << " (" << epsilonMultiple << " * machine epsilon)\n";
