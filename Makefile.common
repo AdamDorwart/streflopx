@@ -40,9 +40,18 @@ else
     LDFLAGS += -Wl,--as-needed
 endif
 
+
 # Options for correctness of code.
 # -ffloat-store is not needed since the FPU flags are set by the streflop_init functions
 CXXFLAGS += -ffp-contract=off -frounding-math -fsignaling-nans -fno-strict-aliasing -mieee-fp -Wall -fdiagnostics-color
+
+# OS and architecture specific flags
+ifneq ($(and $(filter Linux,$(detected_OS)),$(filter aarch64,$(detected_ARCH))),)
+    # Linux ARM64: do not add -mieee-fp
+else
+    # All other cases: add -mieee-fp
+    CXXFLAGS += -mieee-fp
+endif
 
 # The next options should match/select the FPU
 ifdef STREFLOP_X87
