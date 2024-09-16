@@ -5,6 +5,7 @@
 #include <string>
 #include <iomanip>
 #include <limits>
+#include <cstring>
 
 #pragma pack(push, 1)
 struct FileHeader {

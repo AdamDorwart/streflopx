@@ -5,6 +5,5 @@ libm/ldbl-target
 libstreflop-sse.so.0.0.0
 libstreflop.a
 streflop.a
-arithmeticTest
-arithmeticTest.dSYM
-compare
+arithmeticTest*
+compareFloats*
