@@ -49,7 +49,7 @@ ifdef STREFLOP_X87
 CXXFLAGS += -mfpmath=387
 endif
 ifdef STREFLOP_SSE
-CXXFLAGS += -msse
+CXXFLAGS += -msse2
 endif
 ifdef STREFLOP_NEON
 CXXFLAGS += -march=armv8-a+simd
