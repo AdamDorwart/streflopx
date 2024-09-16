@@ -56,6 +56,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
+	CXX=clang
 	CXXFLAGS += -O0 -ffloat-store -fno-fast-math -mno-ms-bitfields -fno-tree-vectorize -fno-unsafe-math-optimizations
   ifdef STREFLOP_X87
       CXXFLAGS += -mpc64  # or -mpc80 for extended precision
