@@ -16,7 +16,7 @@ CXX=g++
 #STREFLOP_NO_DENORMALS = 1
 
 # 3. Set optimization options. You may add -march=you_cpu here for example
-CXXFLAGS = -O3 -pipe -g -frename-registers -fPIC -Wno-narrowing
+CXXFLAGS = -pipe -g -frename-registers -fPIC -Wno-narrowing
 #CXXFLAGS = -O0 -pipe -g
 
 
@@ -56,12 +56,14 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	CXXFLAGS += -fno-fast-math -mno-ms-bitfields
+	CXXFLAGS += -O0 -fno-fast-math -mno-ms-bitfields -fno-tree-vectorize -fno-unsafe-math-optimizations
   ifdef STREFLOP_X87
       CXXFLAGS += -mpc64  # or -mpc80 for extended precision
   else
 			CXXFLAGS += -mfpmath=sse -msse2
 	endif
+else
+	CXXFLAGS += -03
 endif
 
 # The next options should match/select the FPU
