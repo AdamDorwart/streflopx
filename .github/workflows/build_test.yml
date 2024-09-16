@@ -108,8 +108,8 @@ jobs:
       - name: Compare results
         run: |
           ./compareFloats \
-          artifacts/results-linux-x64/result-linux-x64 \
-          artifacts/results-windows-x64/result-windows-x64 \
-          artifacts/results-macos-x64/result-macos-x64 \
-          artifacts/results-macos-arm64/result-macos-arm64 \
-          artifacts/results-linux-arm64/result-linux-arm64
+          artifacts/results-linux-x64-sse/result-linux-x64-sse \
+          artifacts/results-windows-x64-sse/result-windows-x64-sse \
+          artifacts/results-macos-x64-sse/result-macos-x64-sse \
+          artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
+          artifacts/results-macos-arm64-neon/result-macos-arm64-neon \
