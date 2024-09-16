@@ -28,9 +28,9 @@ jobs:
           - os: macos-13
             platform: macos-x64-sse
             build_flags: STREFLOP_SSE=1
-          - os: macos-13
-            platform: macos-x64-x87
-            build_flags: STREFLOP_x87=1
+          # - os: macos-13
+          #   platform: macos-x64-x87
+          #   build_flags: STREFLOP_x87=1
           - os: macos-latest
             platform: macos-arm64-neon
             build_flags: STREFLOP_NEON=1
