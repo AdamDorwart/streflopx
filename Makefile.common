@@ -55,6 +55,15 @@ else
     CXXFLAGS += -mieee-fp
 endif
 
+ifeq ($(detected_OS),Windows)
+	CXXFLAGS += -fno-fast-math -mno-ms-bitfields
+  ifdef STREFLOP_X87
+      CXXFLAGS += -mpc64  # or -mpc80 for extended precision
+  else
+			CXXFLAGS += -mfpmath=sse -msse2
+	endif
+endif
+
 # The next options should match/select the FPU
 ifdef STREFLOP_X87
 CXXFLAGS += -mfpmath=387

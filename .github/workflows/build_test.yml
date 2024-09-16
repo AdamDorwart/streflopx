@@ -134,6 +134,9 @@ jobs:
           ./compareFloats \
           artifacts/results-linux-x64-soft/result-linux-x64-soft \
           artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals
+          echo
+          echo
+          echo
           ./compareFloats \
           artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals \
           artifacts/results-linux-x64-x87-no-denormals/result-linux-x64-x87-no-denormals \
