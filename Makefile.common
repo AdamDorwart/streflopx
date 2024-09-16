@@ -56,7 +56,7 @@ else
 endif
 
 ifeq ($(detected_OS),Windows)
-	CXX=clang
+	CXX=x86_64-w64-mingw32-g++-posix
 	CXXFLAGS += -O0 -ffloat-store -fno-fast-math -mno-ms-bitfields -fno-tree-vectorize -fno-unsafe-math-optimizations
 	CXXFLAGS += -mfpmath=sse -msse2
 else
