@@ -103,12 +103,13 @@ jobs:
         run: ls -R artifacts
 
       - name: Build compare_floats
-        run: make compare_floats
+        run: make compareFloats
 
       - name: Compare results
         run: |
-          ./compare_floats \
+          ./compareFloats \
           artifacts/results-linux-x64/result-linux-x64 \
           artifacts/results-windows-x64/result-windows-x64 \
           artifacts/results-macos-x64/result-macos-x64 \
-          artifacts/results-macos-arm64/result-macos-arm64
+          artifacts/results-macos-arm64/result-macos-arm64 \
+          artifacts/results-linux-arm64/result-linux-arm64

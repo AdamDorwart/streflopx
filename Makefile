@@ -88,6 +88,9 @@ arithmeticTest$(EXE_SUFFIX): arithmeticTest.cpp streflop.a
 randomTest$(EXE_SUFFIX): randomTest.cpp streflop.a
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) randomTest.cpp streflop.a -o $@
 
+compareFloats$(EXE_SUFFIX): compareFloats.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) compareFloats.cpp -o $@
+	
 .PHONY : clean package
 clean:
 	@rm -rfv *.o                                  \
@@ -100,6 +103,8 @@ clean:
 		arithmeticTest.dSYM										  \
 		randomTest$(EXE_SUFFIX)                 \
 		randomTest.dSYM													\
+		compareFloats$(EXE_SUFFIX)                 \
+		compareFloats.dSYM													\
 		${USE_SOFT_BINARY}
 	$(MAKE) -C libm clean
 
