@@ -63,7 +63,7 @@ ifeq ($(detected_OS),Windows)
 			CXXFLAGS += -mfpmath=sse -msse2
 	endif
 else
-	CXXFLAGS += -03
+	CXXFLAGS += -O3
 endif
 
 # The next options should match/select the FPU
