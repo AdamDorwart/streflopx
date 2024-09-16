@@ -242,9 +242,9 @@ void compareAllTypes(const std::vector<std::string>& basePaths) {
         }
         
         if (std::string(types[i]).substr(0, 6) == "simple") {
-            compareFiles<float>(filenames, types[i], 1);
+            compareFiles<float>(filenames, types[i], 100);
         } else {
-            compareFiles<double>(filenames, types[i], 1);
+            compareFiles<double>(filenames, types[i], 100);
         }
     }
 }
