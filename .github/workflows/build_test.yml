@@ -100,7 +100,7 @@ jobs:
           path: result-linux-arm64-neon-no-denormals*
 
   compare-results:
-    needs: [build-test-matrix, build-test-linux-arm64-qemu]
+    needs: [build-test, build-test-linux-arm64-qemu]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
