@@ -51,7 +51,7 @@ jobs:
           name: results-${{ matrix.platform }}
           path: result-${{ matrix.platform }}*
 
-  build-test-linux-arm64:
+  build-test-linux-arm64-qemu:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
           path: result-linux-arm64-neon*
 
   compare-results:
-    needs: [build-test-matrix, build-test-linux-arm64]
+    needs: [build-test-matrix, build-test-linux-arm64-qemu]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

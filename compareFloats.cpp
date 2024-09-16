@@ -6,6 +6,17 @@
 #include <iomanip>
 #include <limits>
 
+#pragma pack(push, 1)
+struct FileHeader {
+    char magic[4];  // Magic number to identify the file type
+    uint32_t version;  // Version of the file format
+    uint32_t dataType;  // 0 for Simple, 1 for Double, 2 for Extended
+    uint32_t dataSize;  // Size of each data element in bytes
+    uint32_t elementCount;  // Number of elements in the file
+    uint32_t extraFlags;  // For future use (e.g., to indicate if it's basic, nan, or lib data)
+};
+#pragma pack(pop)
+
 template<typename T>
 bool isNaN(T value) {
     return value != value;
@@ -21,28 +32,32 @@ std::vector<T> readBinaryFile(const std::string& filename) {
         return data;
     }
     
-    // Get file size
-    file.seekg(0, std::ios::end);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    if (size % sizeof(T) != 0) {
-        std::cerr << "File size is not a multiple of data type size: " << filename << std::endl;
+    FileHeader header;
+    file.read(reinterpret_cast<char*>(&header), sizeof(FileHeader));
+    
+    if (memcmp(header.magic, "SREF", 4) != 0) {
+        std::cerr << "Invalid file format: " << filename << std::endl;
         return data;
     }
-
+    
+    if (header.dataSize != sizeof(T)) {
+        std::cerr << "Mismatched data type size in file: " << filename << std::endl;
+        return data;
+    }
+    
     // Reserve space in vector
-    data.reserve(size / sizeof(T));
+    data.reserve(header.elementCount);
 
     // Read the data
-    T buffer;
-    while (file.read(reinterpret_cast<char*>(&buffer), sizeof(T))) {
-        data.push_back(buffer);
-    }
-
-    if (file.bad()) {
-        std::cerr << "Error reading file: " << filename << std::endl;
-        data.clear();
+    T value;
+    for (uint32_t i = 0; i < header.elementCount; ++i) {
+        file.read(reinterpret_cast<char*>(&value), header.dataSize);
+        if (file.fail()) {
+            std::cerr << "Error reading file: " << filename << std::endl;
+            data.clear();
+            return data;
+        }
+        data.push_back(value);
     }
 
     return data;
@@ -111,7 +126,7 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
             std::cout << "\n" << (hasDifference ? "Difference" : "Near match") << " at index " << i << ":\n";
             
             // Print baseline
-            std::cout << std::left << std::setw(20) << "Baseline"
+            std::cout << std::left << std::setw(25) << "Baseline"
                     << std::setw(25) << std::scientific << std::setprecision(17) << baselineValue
                     << "(0x" << std::hex << std::setw(16) << std::setfill('0') 
                     << *(reinterpret_cast<const uint64_t*>(&baselineValue)) << ")\n" << std::dec << std::setfill(' ');
@@ -120,8 +135,8 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
             for (size_t j = 1; j < allData.size(); ++j) {
                 if (allData[j][i] != baselineValue) {
                     std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
-                    shortName = shortName.substr(0, 19); // Truncate to 19 characters
-                    std::cout << std::left << std::setw(20) << shortName
+                    shortName = shortName.substr(0, 24); // Truncate to 24 characters
+                    std::cout << std::left << std::setw(25) << shortName
                             << std::setw(25) << std::scientific << std::setprecision(17) << allData[j][i]
                             << "(0x" << std::hex << std::setw(16) << std::setfill('0') 
                             << *(reinterpret_cast<const uint64_t*>(&allData[j][i])) << ")\n" << std::dec << std::setfill(' ');
@@ -143,7 +158,9 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
     std::cout << std::string(87, '-') << "\n";
 
     for (size_t j = 1; j < allData.size(); ++j) {
-        std::cout << std::left << std::setw(42) << filenames[j]
+        std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
+        shortName = shortName.substr(0, 24); // Truncate to 24 characters
+        std::cout << std::left << std::setw(42) << shortName
                   << std::setw(15) << exactMatches[j]
                   << std::setw(15) << nearMatches[j]
                   << std::setw(15) << differences[j] << "\n";

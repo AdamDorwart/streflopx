@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 using namespace std;
 // clock
 #include <time.h>
@@ -19,8 +20,39 @@ using namespace std;
 #include "streflop.h"
 using namespace streflop;
 
+#pragma pack(push, 1)
+struct FileHeader {
+    char magic[4];  // Magic number to identify the file type
+    uint32_t version;  // Version of the file format
+    uint32_t dataType;  // 0 for Simple, 1 for Double, 2 for Extended
+    uint32_t dataSize;  // Size of each data element in bytes
+    uint32_t elementCount;  // Number of elements in the file
+    uint32_t extraFlags;  // For future use (e.g., to indicate if it's basic, nan, or lib data)
+};
+#pragma pack(pop)
+
+
+template<class FloatType>
+void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
+    FileHeader header;
+    memcpy(header.magic, "SREF", 4);  // SREF for STandalone REproducible FLOating-Point
+    header.version = 1;
+    header.dataType = std::is_same<FloatType, Simple>::value ? 0 :
+                      (std::is_same<FloatType, Double>::value ? 1 : 2);
+    header.dataSize = sizeof(FloatType);
+    header.elementCount = elementCount;
+    header.extraFlags = extraFlags;
+
+    of.write(reinterpret_cast<char*>(&header), sizeof(FileHeader));
+}
+
 template<class FloatType> inline void writeFloat(ofstream& of, FloatType f) {
     int nbytes = sizeof(f);
+    #ifdef Extended
+    if (std::is_same<FloatType, Extended>::value) {
+        nbytes = 10;  // Always use 10 bytes for Extended, regardless of its actual size
+    }
+    #endif
     char* thefloat = reinterpret_cast<char*>(&f);
     long check = 1;
     // big endian OK, reverse little endian
@@ -32,23 +64,6 @@ template<class FloatType> inline void writeFloat(ofstream& of, FloatType f) {
         of.write(thefloat,nbytes);
     }
 };
-
-#ifdef Extended
-// special case for extended, size-dependent
-template<> inline void writeFloat<Extended>(ofstream& of, Extended f) {
-    int nbytes = 10;
-    char* thefloat = reinterpret_cast<char*>(&f);
-    long check = 1;
-    // big endian OK, reverse little endian
-    if (*reinterpret_cast<char*>(&check) == 1) {
-        char buffer[nbytes];
-        for (int i=0; i<nbytes; ++i) buffer[i] = thefloat[9-i];
-        of.write(buffer,nbytes);
-    } else {
-        of.write(thefloat,nbytes);
-    }
-};
-#endif
 
 template<class FloatType> void doTest(string s, string name) {
 
@@ -74,12 +89,13 @@ template<class FloatType> void doTest(string s, string name) {
         cout << "Problem creating binary file: " << mathlib_filename << endl;
         exit(4);
     }
-
+    
     FloatType f = 42;
 
     // Trap NaNs
     feraiseexcept(FE_INVALID);
 
+    writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
     // No math function is called before this loop
     for (int i=0; i<10000; ++i) {
@@ -89,6 +105,7 @@ template<class FloatType> void doTest(string s, string name) {
     }
     basicfile.close();
 
+    writeFileHeader<FloatType>(infnanfile, 10003, 1);  // 1 for NaN operations (5000 + 5000 + 3)
     // Explicit checks for Inf, Nan, Denormals
     // Minimal number somewhere around 10-4932 for long double
     // Check for denormals at the same time
@@ -135,6 +152,7 @@ template<class FloatType> void doTest(string s, string name) {
     // Trap NaNs again
     feraiseexcept(FE_INVALID);
 
+    writeFileHeader<FloatType>(mathlibfile, 10000, 2);  // 2 for math library operations
     // Call the Math functions
     for (int i=0; i<10000; ++i) {
         f = streflop::tanh(streflop::cbrt(streflop::fabs(streflop::log2(streflop::sin(FloatType(RandomII(0,i)))+FloatType(2.0)))+FloatType(1.0)));
