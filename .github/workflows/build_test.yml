@@ -20,49 +20,54 @@ jobs:
             platform: linux-x64-sse
             base_flags: STREFLOP_SSE=1
           - os: ubuntu-latest
+            platform: linux-x64-sse-no-denormals
+            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
+          - os: ubuntu-latest
             platform: linux-x64-x87
             base_flags: STREFLOP_X87=1
+          - os: ubuntu-latest
+            platform: linux-x64-x87-no-denormals
+            base_flags: STREFLOP_X87=1 STREFLOP_NO_DENORMALS=1
           - os: windows-latest
             platform: windows-x64-sse
             base_flags: STREFLOP_SSE=1
           - os: windows-latest
+            platform: windows-x64-sse-no-denormals
+            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
+          - os: windows-latest
             platform: windows-x64-x87
             base_flags: STREFLOP_X87=1
+          - os: windows-latest
+            platform: windows-x64-x87-no-denormals
+            base_flags: STREFLOP_X87=1 STREFLOP_NO_DENORMALS=1
           - os: macos-13
             platform: macos-x64-sse
             base_flags: STREFLOP_SSE=1
-          # - os: macos-13
-          #   platform: macos-x64-x87
-          #   base_flags: STREFLOP_x87=1
+          - os: macos-13
+            platform: macos-x64-sse-no-denormals
+            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
           - os: macos-latest
             platform: macos-arm64-neon
             base_flags: STREFLOP_NEON=1
-        denormals: [false, true]
+          - os: macos-latest
+            platform: macos-arm64-neon-no-denormals
+            base_flags: STREFLOP_NEON=1 STREFLOP_NO_DENORMALS=1
 
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set build flags
-        run: |
-          BUILD_FLAGS="${{ matrix.config.base_flags }}"
-          if [[ "${{ matrix.denormals }}" == "true" ]]; then
-            BUILD_FLAGS="$BUILD_FLAGS STREFLOP_NO_DENORMALS=1"
-          fi
-          echo "BUILD_FLAGS=$BUILD_FLAGS" >> $GITHUB_ENV
-
       - name: Build arithmetic test
-        run: make ${{ env.BUILD_FLAGS }} arithmeticTest
+        run: make ${{ matrix.config.base_flags }} arithmeticTest
 
       - name: Run arithmetic test
-        run: ./arithmeticTest result-${{ matrix.config.platform }}-denormals${{ matrix.denormals }}
+        run: ./arithmeticTest result-${{ matrix.config.platform }}
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
-          name: results-${{ matrix.config.platform }}-denormals${{ matrix.denormals }}
-          path: result-${{ matrix.config.platform }}-denormals${{ matrix.denormals }}*
-
+          name: results-${{ matrix.config.platform }}
+          path: result-${{ matrix.config.platform }}*
   build-test-linux-arm64-qemu:
     runs-on: ubuntu-latest
     steps:
@@ -77,10 +82,10 @@ jobs:
         shell: run-in-container.sh {0}
         run: |
           make STREFLOP_NEON=1 arithmeticTest
-          ./arithmeticTest result-linux-arm64-neon-denormals-false
+          ./arithmeticTest result-linux-arm64-neon
           make clean
           make STREFLOP_NEON=1 STREFLOP_NO_DENORMALS=1 arithmeticTest
-          ./arithmeticTest result-linux-arm64-neon-denormalstrue
+          ./arithmeticTest result-linux-arm64-neon-no-denormals
 
       - name: Upload results
         uses: actions/upload-artifact@v4
