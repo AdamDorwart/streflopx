@@ -27,8 +27,10 @@ ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
 	detected_OS := Windows
 else
 	detected_OS := $(strip $(shell uname -s | tr -d '\r'))
+  detected_ARCH := $(shell uname -m)
 endif
 $(info Detected OS is [$(detected_OS)])
+$(info Detected architecture is [$(detected_ARCH)])
 
 # 4. Optional, removes false dependency on libm
 LDFLAGS :=
@@ -43,7 +45,7 @@ endif
 
 # Options for correctness of code.
 # -ffloat-store is not needed since the FPU flags are set by the streflop_init functions
-CXXFLAGS += -ffp-contract=off -frounding-math -fsignaling-nans -fno-strict-aliasing -mieee-fp -Wall -fdiagnostics-color
+CXXFLAGS += -ffp-contract=off -frounding-math -fsignaling-nans -fno-strict-aliasing -Wall -fdiagnostics-color
 
 # OS and architecture specific flags
 ifneq ($(and $(filter Linux,$(detected_OS)),$(filter aarch64,$(detected_ARCH))),)
