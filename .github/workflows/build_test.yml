@@ -14,6 +14,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            platform: linux-x64-soft
+            build_flags: STREFLOP_SOFT=1
+          - os: ubuntu-latest
             platform: linux-x64-sse
             build_flags: STREFLOP_SSE=1
           - os: ubuntu-latest
@@ -93,6 +96,7 @@ jobs:
       - name: Compare results
         run: |
           ./compareFloats \
+          artifacts/results-linux-x64-soft/result-linux-x64-soft \
           artifacts/results-linux-x64-sse/result-linux-x64-sse \
           artifacts/results-linux-x64-x87/result-linux-x64-x87 \
           artifacts/results-windows-x64-sse/result-windows-x64-sse \
