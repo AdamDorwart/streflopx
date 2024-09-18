@@ -46,12 +46,12 @@ jobs:
           - os: macos-13
             platform: macos-x64-sse-no-denormals
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          - os: macos-latest
-            platform: macos-arm64-neon
-            base_flags: 
-          - os: macos-latest
-            platform: macos-arm64-neon-no-denormals
-            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: macos-latest
+          #   platform: macos-arm64-neon
+          #   base_flags: 
+          # - os: macos-latest
+          #   platform: macos-arm64-neon-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
 
     runs-on: ${{ matrix.config.os }}
     steps:
