@@ -208,11 +208,48 @@ enum FPU_RoundMode {
 
 // plan for portability
 #ifdef _MSC_VER
+#include <intrin.h>
+
+#ifdef _M_IX86
+// For x86 Windows, use inline assembly directly
 #define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
 #define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int32_t tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int32_t tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
 #else
+// For x64 Windows, use __declspec(naked) functions
+__declspec(naked) void __STREFLOP_FSTCW(short* cw) {
+    __asm {
+        fstcw word ptr [rcx]
+        ret
+    }
+}
+__declspec(naked) void __STREFLOP_FLDCW(const short* cw) {
+    __asm {
+        fldcw word ptr [rcx]
+        ret
+    }
+}
+__declspec(naked) void __STREFLOP_STMXCSR(int* cw) {
+    __asm {
+        stmxcsr dword ptr [rcx]
+        ret
+    }
+}
+__declspec(naked) void __STREFLOP_LDMXCSR(const int* cw) {
+    __asm {
+        ldmxcsr dword ptr [rcx]
+        ret
+    }
+}
+#define STREFLOP_FSTCW(cw) do { __STREFLOP_FSTCW(&(cw)); } while (0)
+#define STREFLOP_FLDCW(cw) do { __STREFLOP_FLDCW(&(cw)); } while (0)
+#define STREFLOP_STMXCSR(cw) do { __STREFLOP_STMXCSR(&(cw)); } while (0)
+#define STREFLOP_LDMXCSR(cw) do { __STREFLOP_LDMXCSR(&(cw)); } while (0)
+#endif
+
+#else
+// For non-MSVC compilers (e.g., GCC, Clang)
 #define STREFLOP_FSTCW(cw) do { asm volatile ("fstcw %0" : "=m" (cw) : ); } while (0)
 #define STREFLOP_FLDCW(cw) do { asm volatile ("fclex \n fldcw %0" : : "m" (cw)); } while (0)
 #define STREFLOP_STMXCSR(cw) do { asm volatile ("stmxcsr %0" : "=m" (cw) : ); } while (0)
