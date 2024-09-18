@@ -208,6 +208,7 @@ enum FPU_RoundMode {
 
 // plan for portability
 #ifdef _MSC_VER
+#error "TRIGGERED"
 #define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
 #define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
 #define STREFLOP_STMXCSR(cw) do { int32_t tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
