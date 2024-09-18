@@ -46,6 +46,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
 elseif(MSVC)
     # MSVC-specific flags (to be expanded)
     add_compile_options(/W4)
+    enable_language(ASM_MASM)
+    set(fpu_settings_asm "FPUSettings.asm")
+    set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
+    add_library(fpu_settings STATIC ${fpu_settings_asm})
+    target_link_libraries(streflop PRIVATE fpu_settings)
 endif()
 
 # Platform-specific linker flags
