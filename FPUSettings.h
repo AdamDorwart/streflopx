@@ -210,43 +210,11 @@ enum FPU_RoundMode {
 #ifdef _MSC_VER
 #include <intrin.h>
 
-#ifdef _M_IX86
-// For x86 Windows, use inline assembly directly
-#define STREFLOP_FSTCW(cw) do { uint16_t tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_FLDCW(cw) do { uint16_t tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int32_t tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int32_t tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
-#else
-// For x64 Windows, use __declspec(naked) functions
-__declspec(naked) void __STREFLOP_FSTCW(uint16_t* cw) {
-    __asm {
-        fstcw word ptr [rcx]
-        ret
-    }
-}
-__declspec(naked) void __STREFLOP_FLDCW(const uint16_t* cw) {
-    __asm {
-        fldcw word ptr [rcx]
-        ret
-    }
-}
-__declspec(naked) void __STREFLOP_STMXCSR(int32_t* cw) {
-    __asm {
-        stmxcsr dword ptr [rcx]
-        ret
-    }
-}
-__declspec(naked) void __STREFLOP_LDMXCSR(const int32_t* cw) {
-    __asm {
-        ldmxcsr dword ptr [rcx]
-        ret
-    }
-}
-#define STREFLOP_FSTCW(cw) do { __STREFLOP_FSTCW(&(cw)); } while (0)
-#define STREFLOP_FLDCW(cw) do { __STREFLOP_FLDCW(&(cw)); } while (0)
-#define STREFLOP_STMXCSR(cw) do { __STREFLOP_STMXCSR(&(cw)); } while (0)
-#define STREFLOP_LDMXCSR(cw) do { __STREFLOP_LDMXCSR(&(cw)); } while (0)
-#endif
+// For both x86 and x64 Windows, use intrinsics
+#define STREFLOP_FSTCW(cw) do { unsigned int tmp; (cw) = _control87(0, 0); } while (0)
+#define STREFLOP_FLDCW(cw) do { _control87((cw), _MCW_ALL); } while (0)
+#define STREFLOP_STMXCSR(cw) do { (cw) = _mm_getcsr(); } while (0)
+#define STREFLOP_LDMXCSR(cw) do { _mm_setcsr(cw); } while (0)
 
 #else
 // For non-MSVC compilers (e.g., GCC, Clang)
