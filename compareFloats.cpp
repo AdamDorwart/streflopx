@@ -7,6 +7,7 @@
 #include <limits>
 #include <cstring>
 #include <sstream>
+#include <cstdint>
 
 #pragma pack(push, 1)
 struct FileHeader {

@@ -34,11 +34,11 @@
 
 // This file may include System.h and SoftFloat
 #include "System.h"
-
 #include "softfloat/softfloat.h"
 
 namespace streflop {
 
+#include "SoftFloatWrapper.h"
 using namespace streflop::SoftFloat;
 
 
