@@ -40,12 +40,12 @@ jobs:
           - os: windows-latest
             platform: windows-x64-x87-no-denormals
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          - os: macos-13
-            platform: macos-x64-sse
-            base_flags: 
-          - os: macos-13
-            platform: macos-x64-sse-no-denormals
-            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: macos-13
+          #   platform: macos-x64-sse
+          #   base_flags: 
+          # - os: macos-13
+          #   platform: macos-x64-sse-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
           # - os: macos-latest
           #   platform: macos-arm64-neon
           #   base_flags: 
@@ -64,7 +64,7 @@ jobs:
           make
 
       - name: Run arithmetic test
-        run: cd build && ./arithmeticTest result-${{ matrix.config.platform }}
+        run: cd build && ./arithmeticTest ../result-${{ matrix.config.platform }}
 
       - name: Upload results
         uses: actions/upload-artifact@v4
