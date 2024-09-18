@@ -83,15 +83,28 @@ jobs:
         run: |
           make STREFLOP_NEON=1 arithmeticTest
           ./arithmeticTest result-linux-arm64-neon
-          make clean
-          make STREFLOP_NEON=1 STREFLOP_NO_DENORMALS=1 arithmeticTest
-          ./arithmeticTest result-linux-arm64-neon-no-denormals
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: results-linux-arm64-neon
           path: result-linux-arm64-neon_*
+
+  build-test-linux-arm64-no-denormals-qemu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sandervocke/setup-qemu-container@v1
+        with:
+          container: gcc:latest
+          arch: arm64
+      - uses: sandervocke/setup-shell-wrapper@v1
+
+      - name: Build and run arithmetic test
+        shell: run-in-container.sh {0}
+        run: |
+          make STREFLOP_NEON=1 STREFLOP_NO_DENORMALS=1 arithmeticTest
+          ./arithmeticTest result-linux-arm64-neon-no-denormals
 
       - name: Upload results
         uses: actions/upload-artifact@v4
@@ -100,7 +113,12 @@ jobs:
           path: result-linux-arm64-neon-no-denormals*
 
   compare-results:
-    needs: [build-test, build-test-linux-arm64-qemu]
+    needs:
+      [
+        build-test,
+        build-test-linux-arm64-qemu,
+        build-test-linux-arm64-no-denormals-qemu,
+      ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
