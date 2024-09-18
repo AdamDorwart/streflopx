@@ -60,8 +60,10 @@ jobs:
       - name: Build arithmetic test
         #run: make ${{ matrix.config.base_flags }} arithmeticTest
         run: |
-          mkdir build && cd build && cmake ${{ matrix.config.base_flags}} ..
-          make
+          mkdir build
+          cd build
+          cmake ${{ matrix.config.base_flags}} ..
+          cmake --build .
 
       - name: Run arithmetic test
         run: cd build && ./arithmeticTest ../result-${{ matrix.config.platform }}
