@@ -79,8 +79,8 @@ namespace streflop_libm {
 #if FLT_EVAL_METHOD != 1
 	  if (FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1)
 	    asm ("" : "=m"(x) : "m"(x));
-#end
-#end
+#endif
+#endif
 	  return x;	/* overflow  */
 	}
 	if(hy<0x00100000) {		/* underflow */
