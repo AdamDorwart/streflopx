@@ -212,31 +212,31 @@ enum FPU_RoundMode {
 
 #ifdef _M_IX86
 // For x86 Windows, use inline assembly directly
-#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+#define STREFLOP_FSTCW(cw) do { uint16_t tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_FLDCW(cw) do { uint16_t tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int32_t tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int32_t tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
 #else
 // For x64 Windows, use __declspec(naked) functions
-__declspec(naked) void __STREFLOP_FSTCW(short* cw) {
+__declspec(naked) void __STREFLOP_FSTCW(uint16_t* cw) {
     __asm {
         fstcw word ptr [rcx]
         ret
     }
 }
-__declspec(naked) void __STREFLOP_FLDCW(const short* cw) {
+__declspec(naked) void __STREFLOP_FLDCW(const uint16_t* cw) {
     __asm {
         fldcw word ptr [rcx]
         ret
     }
 }
-__declspec(naked) void __STREFLOP_STMXCSR(int* cw) {
+__declspec(naked) void __STREFLOP_STMXCSR(int32_t* cw) {
     __asm {
         stmxcsr dword ptr [rcx]
         ret
     }
 }
-__declspec(naked) void __STREFLOP_LDMXCSR(const int* cw) {
+__declspec(naked) void __STREFLOP_LDMXCSR(const int32_t* cw) {
     __asm {
         ldmxcsr dword ptr [rcx]
         ret
