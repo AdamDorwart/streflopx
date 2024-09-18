@@ -48,8 +48,7 @@ elseif(MSVC)
     add_compile_options(/W4)
     add_definitions(-D__STDC__=1)
     
-    # Optional: Force MSVC to be more standards-compliant
-    add_compile_options(/permissive-)
+    add_compile_options(/permissive- /Zc:__cplusplus /wd4146 /wd4711)
     
     enable_language(ASM_MASM)
     set(fpu_settings_asm "FPUSettings.asm")
