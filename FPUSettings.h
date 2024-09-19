@@ -81,6 +81,17 @@
 #include "softfloat/softfloat.h"
 #endif
 
+#if defined(_MSC_VER)
+#ifndef _M_IX86
+extern "C" {
+    short __streflop_fstcw();
+    void __streflop_fldcw(short);
+    int __streflop_stmxcsr();
+    void __streflop_ldmxcsr(int);
+}
+#endif
+#endif
+
 namespace streflop {
 
 // We do not use libm, so let's copy a few flags and C99 functions
@@ -207,12 +218,20 @@ enum FPU_RoundMode {
 */
 
 // plan for portability
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
+#ifdef _M_IX86
 #define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
 #define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
-#define STREFLOP_STMXCSR(cw) do { int32_t tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
-#define STREFLOP_LDMXCSR(cw) do { int32_t tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
 #else
+#define STREFLOP_FSTCW(cw) do { (cw) = __streflop_fstcw(); } while (0)
+#define STREFLOP_FLDCW(cw) do { __streflop_fldcw(cw); } while (0)
+#define STREFLOP_STMXCSR(cw) do { (cw) = __streflop_stmxcsr(); } while (0)
+#define STREFLOP_LDMXCSR(cw) do { __streflop_ldmxcsr(cw); } while (0)
+#endif
+#else
+// For non-MSVC compilers (e.g., GCC, Clang)
 #define STREFLOP_FSTCW(cw) do { asm volatile ("fstcw %0" : "=m" (cw) : ); } while (0)
 #define STREFLOP_FLDCW(cw) do { asm volatile ("fclex \n fldcw %0" : : "m" (cw)); } while (0)
 #define STREFLOP_STMXCSR(cw) do { asm volatile ("stmxcsr %0" : "=m" (cw) : ); } while (0)

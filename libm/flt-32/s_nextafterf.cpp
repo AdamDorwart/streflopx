@@ -62,8 +62,10 @@ namespace streflop_libm {
 	hy = hx&0x7f800000;
 	if(hy>=0x7f800000) {
 	  x = x+x;	/* overflow  */
+#if FLT_EVAL_METHOD != 0
 	  if (FLT_EVAL_METHOD != 0)
 	    asm ("" : "=m"(x) : "m"(x));
+#endif
 	  return x;	/* overflow  */
 	}
 	if(hy<0x00800000) {		/* underflow */

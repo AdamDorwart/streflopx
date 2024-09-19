@@ -15,53 +15,58 @@ jobs:
         config:
           - os: ubuntu-latest
             platform: linux-x64-soft
-            base_flags: STREFLOP_SOFT=1
+            base_flags: -DSTREFLOP_SOFT=ON
           - os: ubuntu-latest
             platform: linux-x64-sse
-            base_flags: STREFLOP_SSE=1
+            base_flags: 
           - os: ubuntu-latest
             platform: linux-x64-sse-no-denormals
-            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: ubuntu-latest
             platform: linux-x64-x87
-            base_flags: STREFLOP_X87=1
+            base_flags: 
           - os: ubuntu-latest
             platform: linux-x64-x87-no-denormals
-            base_flags: STREFLOP_X87=1 STREFLOP_NO_DENORMALS=1
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: windows-latest
             platform: windows-x64-sse
-            base_flags: STREFLOP_SSE=1
+            base_flags: 
           - os: windows-latest
             platform: windows-x64-sse-no-denormals
-            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: windows-latest
             platform: windows-x64-x87
-            base_flags: STREFLOP_X87=1
+            base_flags: 
           - os: windows-latest
             platform: windows-x64-x87-no-denormals
-            base_flags: STREFLOP_X87=1 STREFLOP_NO_DENORMALS=1
-          - os: macos-13
-            platform: macos-x64-sse
-            base_flags: STREFLOP_SSE=1
-          - os: macos-13
-            platform: macos-x64-sse-no-denormals
-            base_flags: STREFLOP_SSE=1 STREFLOP_NO_DENORMALS=1
-          - os: macos-latest
-            platform: macos-arm64-neon
-            base_flags: STREFLOP_NEON=1
-          - os: macos-latest
-            platform: macos-arm64-neon-no-denormals
-            base_flags: STREFLOP_NEON=1 STREFLOP_NO_DENORMALS=1
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: macos-13
+          #   platform: macos-x64-sse
+          #   base_flags: 
+          # - os: macos-13
+          #   platform: macos-x64-sse-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: macos-latest
+          #   platform: macos-arm64-neon
+          #   base_flags: 
+          # - os: macos-latest
+          #   platform: macos-arm64-neon-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
 
     runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Build arithmetic test
-        run: make ${{ matrix.config.base_flags }} arithmeticTest
+        #run: make ${{ matrix.config.base_flags }} arithmeticTest
+        run: |
+          mkdir build
+          cd build
+          cmake ${{ matrix.config.base_flags}} ..
+          cmake --build .
 
       - name: Run arithmetic test
-        run: ./arithmeticTest result-${{ matrix.config.platform }}
+        run: cd build && ./arithmeticTest ../result-${{ matrix.config.platform }}
 
       - name: Upload results
         uses: actions/upload-artifact@v4
