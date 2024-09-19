@@ -34,12 +34,12 @@
 /*                                                                         */
 /***************************************************************************/
 
-#include "endian.h"
-#include "uexp.h"
-#include "mydefs.h"
 #include "MathLib.h"
-#include "uexp.tbl"
+#include "endian.h"
 #include "math_private.h"
+#include "mydefs.h"
+#include "uexp.h"
+#include "uexp.tbl"
 
 Double __slowexp(Double);
 
@@ -50,101 +50,116 @@ Double __slowexp(Double);
 namespace streflop_libm {
 Double __ieee754_exp(Double x) {
   Double bexp, t, eps, del, base, y, al, bet, res, rem, cor;
-  mynumber junk1, junk2, binexp  = {{0,0}};
+  mynumber junk1, junk2, binexp = {{0, 0}};
 #if 0
   int4 k;
 #endif
-  int4 i,j,m,n,ex;
+  int4 i, j, m, n, ex;
 
   junk1.x() = x;
   m = junk1.i[HIGH_HALF];
-  n = m&hugeint;
+  n = m & hugeint;
 
   if (n > smallint && n < bigint) {
 
-    y = x*log2e.x() + three51.x();
-    bexp = y - three51.x();      /*  multiply the result by 2**bexp        */
+    y = x * log2e.x() + three51.x();
+    bexp = y - three51.x(); /*  multiply the result by 2**bexp        */
 
     junk1.x() = y;
 
-    eps = bexp*ln_two2.x();      /* x = bexp*ln(2) + t - eps               */
-    t = x - bexp*ln_two1.x();
+    eps = bexp * ln_two2.x(); /* x = bexp*ln(2) + t - eps               */
+    t = x - bexp * ln_two1.x();
 
     y = t + three33.x();
-    base = y - three33.x();      /* t rounded to a multiple of 2**-18      */
+    base = y - three33.x(); /* t rounded to a multiple of 2**-18      */
     junk2.x() = y;
-    del = (t - base) - eps;    /*  x = bexp*ln(2) + base + del           */
-    eps = del + del*del*(p3.x()*del + p2.x());
+    del = (t - base) - eps; /*  x = bexp*ln(2) + base + del           */
+    eps = del + del * del * (p3.x() * del + p2.x());
 
-    binexp.i[HIGH_HALF] =(junk1.i[LOW_HALF]+1023)<<20;
+    binexp.i[HIGH_HALF] = (junk1.i[LOW_HALF] + 1023) << 20;
 
-    i = ((junk2.i[LOW_HALF]>>8)&0xfffffffe)+356;
-    j = (junk2.i[LOW_HALF]&511)<<1;
+    i = ((junk2.i[LOW_HALF] >> 8) & 0xfffffffe) + 356;
+    j = (junk2.i[LOW_HALF] & 511) << 1;
 
-    al = coar.x(i)*fine.x(j);
-    bet =(coar.x(i)*fine.x(j+1) + coar.x(i+1)*fine.x(j)) + coar.x(i+1)*fine.x(j+1);
+    al = coar.x(i) * fine.x(j);
+    bet = (coar.x(i) * fine.x(j + 1) + coar.x(i + 1) * fine.x(j)) +
+          coar.x(i + 1) * fine.x(j + 1);
 
-    rem=(bet + bet*eps)+al*eps;
+    rem = (bet + bet * eps) + al * eps;
     res = al + rem;
     cor = (al - res) + rem;
-    if  (res == (res+cor*err_0)) return res*binexp.x();
-    else return __slowexp(x); /*if error is over bound */
+    if (res == (res + cor * err_0))
+      return res * binexp.x();
+    else
+      return __slowexp(x); /*if error is over bound */
   }
 
-  if (n <= smallint) return 1.0;
+  if (n <= smallint)
+    return 1.0;
 
   if (n >= badint) {
-    if (n > infint) return(x+x);               /* x is NaN */
-    if (n < infint) return ( (x>0) ? (hhuge*hhuge) : (tiny*tiny) );
+    if (n > infint)
+      return (x + x); /* x is NaN */
+    if (n < infint)
+      return ((x > 0) ? (hhuge * hhuge) : (tiny * tiny));
     /* x is finite,  cause either overflow or underflow  */
-    if (junk1.i[LOW_HALF] != 0)  return (x+x);                /*  x is NaN  */
-    return ((x>0)?inf.x():zero );             /* |x| = inf;  return either inf or 0 */
+    if (junk1.i[LOW_HALF] != 0)
+      return (x + x);                  /*  x is NaN  */
+    return ((x > 0) ? inf.x() : zero); /* |x| = inf;  return either inf or 0 */
   }
 
-  y = x*log2e.x() + three51.x();
+  y = x * log2e.x() + three51.x();
   bexp = y - three51.x();
   junk1.x() = y;
-  eps = bexp*ln_two2.x();
-  t = x - bexp*ln_two1.x();
+  eps = bexp * ln_two2.x();
+  t = x - bexp * ln_two1.x();
   y = t + three33.x();
   base = y - three33.x();
   junk2.x() = y;
   del = (t - base) - eps;
-  eps = del + del*del*(p3.x()*del + p2.x());
-  i = ((junk2.i[LOW_HALF]>>8)&0xfffffffe)+356;
-  j = (junk2.i[LOW_HALF]&511)<<1;
-  al = coar.x(i)*fine.x(j);
-  bet =(coar.x(i)*fine.x(j+1) + coar.x(i+1)*fine.x(j)) + coar.x(i+1)*fine.x(j+1);
-  rem=(bet + bet*eps)+al*eps;
+  eps = del + del * del * (p3.x() * del + p2.x());
+  i = ((junk2.i[LOW_HALF] >> 8) & 0xfffffffe) + 356;
+  j = (junk2.i[LOW_HALF] & 511) << 1;
+  al = coar.x(i) * fine.x(j);
+  bet = (coar.x(i) * fine.x(j + 1) + coar.x(i + 1) * fine.x(j)) +
+        coar.x(i + 1) * fine.x(j + 1);
+  rem = (bet + bet * eps) + al * eps;
   res = al + rem;
   cor = (al - res) + rem;
-  if (m>>31) {
-    ex=junk1.i[LOW_HALF];
-    if (res < 1.0) {res+=res; cor+=cor; ex-=1;}
-    if (ex >=-1022) {
-      binexp.i[HIGH_HALF] = (1023+ex)<<20;
-      if  (res == (res+cor*err_0)) return res*binexp.x();
-      else return __slowexp(x); /*if error is over bound */
+  if (m >> 31) {
+    ex = junk1.i[LOW_HALF];
+    if (res < 1.0) {
+      res += res;
+      cor += cor;
+      ex -= 1;
     }
-    ex = -(1022+ex);
-    binexp.i[HIGH_HALF] = (1023-ex)<<20;
-    res*=binexp.x();
-    cor*=binexp.x();
-    eps=1.0000000001+err_0*binexp.x();
-    t=1.0+res;
-    y = ((1.0-t)+res)+cor;
-    res=t+y;
-    cor = (t-res)+y;
-    if (res == (res + eps*cor))
-    { binexp.i[HIGH_HALF] = 0x00100000;
-      return (res-1.0)*binexp.x();
+    if (ex >= -1022) {
+      binexp.i[HIGH_HALF] = (1023 + ex) << 20;
+      if (res == (res + cor * err_0))
+        return res * binexp.x();
+      else
+        return __slowexp(x); /*if error is over bound */
     }
-    else return __slowexp(x); /*   if error is over bound    */
-  }
-  else {
-    binexp.i[HIGH_HALF] =(junk1.i[LOW_HALF]+767)<<20;
-    if  (res == (res+cor*err_0)) return res*binexp.x()*t256.x();
-    else return __slowexp(x);
+    ex = -(1022 + ex);
+    binexp.i[HIGH_HALF] = (1023 - ex) << 20;
+    res *= binexp.x();
+    cor *= binexp.x();
+    eps = 1.0000000001 + err_0 * binexp.x();
+    t = 1.0 + res;
+    y = ((1.0 - t) + res) + cor;
+    res = t + y;
+    cor = (t - res) + y;
+    if (res == (res + eps * cor)) {
+      binexp.i[HIGH_HALF] = 0x00100000;
+      return (res - 1.0) * binexp.x();
+    } else
+      return __slowexp(x); /*   if error is over bound    */
+  } else {
+    binexp.i[HIGH_HALF] = (junk1.i[LOW_HALF] + 767) << 20;
+    if (res == (res + cor * err_0))
+      return res * binexp.x() * t256.x();
+    else
+      return __slowexp(x);
   }
 }
 
@@ -157,99 +172,115 @@ Double __ieee754_exp(Double x) {
 
 Double __exp1(Double x, Double xx, Double error) {
   Double bexp, t, eps, del, base, y, al, bet, res, rem, cor;
-  mynumber junk1, junk2, binexp  = {{0,0}};
+  mynumber junk1, junk2, binexp = {{0, 0}};
 #if 0
   int4 k;
 #endif
-  int4 i,j,m,n,ex;
+  int4 i, j, m, n, ex;
 
   junk1.x() = x;
   m = junk1.i[HIGH_HALF];
-  n = m&hugeint;                 /* no sign */
+  n = m & hugeint; /* no sign */
 
   if (n > smallint && n < bigint) {
-    y = x*log2e.x() + three51.x();
-    bexp = y - three51.x();      /*  multiply the result by 2**bexp        */
+    y = x * log2e.x() + three51.x();
+    bexp = y - three51.x(); /*  multiply the result by 2**bexp        */
 
     junk1.x() = y;
 
-    eps = bexp*ln_two2.x();      /* x = bexp*ln(2) + t - eps               */
-    t = x - bexp*ln_two1.x();
+    eps = bexp * ln_two2.x(); /* x = bexp*ln(2) + t - eps               */
+    t = x - bexp * ln_two1.x();
 
     y = t + three33.x();
-    base = y - three33.x();      /* t rounded to a multiple of 2**-18      */
+    base = y - three33.x(); /* t rounded to a multiple of 2**-18      */
     junk2.x() = y;
-    del = (t - base) + (xx-eps);    /*  x = bexp*ln(2) + base + del      */
-    eps = del + del*del*(p3.x()*del + p2.x());
+    del = (t - base) + (xx - eps); /*  x = bexp*ln(2) + base + del      */
+    eps = del + del * del * (p3.x() * del + p2.x());
 
-    binexp.i[HIGH_HALF] =(junk1.i[LOW_HALF]+1023)<<20;
+    binexp.i[HIGH_HALF] = (junk1.i[LOW_HALF] + 1023) << 20;
 
-    i = ((junk2.i[LOW_HALF]>>8)&0xfffffffe)+356;
-    j = (junk2.i[LOW_HALF]&511)<<1;
+    i = ((junk2.i[LOW_HALF] >> 8) & 0xfffffffe) + 356;
+    j = (junk2.i[LOW_HALF] & 511) << 1;
 
-    al = coar.x(i)*fine.x(j);
-    bet =(coar.x(i)*fine.x(j+1) + coar.x(i+1)*fine.x(j)) + coar.x(i+1)*fine.x(j+1);
+    al = coar.x(i) * fine.x(j);
+    bet = (coar.x(i) * fine.x(j + 1) + coar.x(i + 1) * fine.x(j)) +
+          coar.x(i + 1) * fine.x(j + 1);
 
-    rem=(bet + bet*eps)+al*eps;
+    rem = (bet + bet * eps) + al * eps;
     res = al + rem;
     cor = (al - res) + rem;
-    if  (res == (res+cor*(1.0+error+err_1))) return res*binexp.x();
-    else return -10.0;
+    if (res == (res + cor * (1.0 + error + err_1)))
+      return res * binexp.x();
+    else
+      return -10.0;
   }
 
-  if (n <= smallint) return 1.0; /*  if x->0 e^x=1 */
+  if (n <= smallint)
+    return 1.0; /*  if x->0 e^x=1 */
 
   if (n >= badint) {
-    if (n > infint) return(zero/zero);    /* x is NaN,  return invalid */
-    if (n < infint) return ( (x>0) ? (hhuge*hhuge) : (tiny*tiny) );
+    if (n > infint)
+      return (inf.x() - inf.x()); /* x is NaN,  return invalid */
+    if (n < infint)
+      return ((x > 0) ? (hhuge * hhuge) : (tiny * tiny));
     /* x is finite,  cause either overflow or underflow  */
-    if (junk1.i[LOW_HALF] != 0)  return (zero/zero);        /*  x is NaN  */
-    return ((x>0)?inf.x():zero );   /* |x| = inf;  return either inf or 0 */
+    if (junk1.i[LOW_HALF] != 0)
+      return (zero / zero);            /*  x is NaN  */
+    return ((x > 0) ? inf.x() : zero); /* |x| = inf;  return either inf or 0 */
   }
 
-  y = x*log2e.x() + three51.x();
+  y = x * log2e.x() + three51.x();
   bexp = y - three51.x();
   junk1.x() = y;
-  eps = bexp*ln_two2.x();
-  t = x - bexp*ln_two1.x();
+  eps = bexp * ln_two2.x();
+  t = x - bexp * ln_two1.x();
   y = t + three33.x();
   base = y - three33.x();
   junk2.x() = y;
-  del = (t - base) + (xx-eps);
-  eps = del + del*del*(p3.x()*del + p2.x());
-  i = ((junk2.i[LOW_HALF]>>8)&0xfffffffe)+356;
-  j = (junk2.i[LOW_HALF]&511)<<1;
-  al = coar.x(i)*fine.x(j);
-  bet =(coar.x(i)*fine.x(j+1) + coar.x(i+1)*fine.x(j)) + coar.x(i+1)*fine.x(j+1);
-  rem=(bet + bet*eps)+al*eps;
+  del = (t - base) + (xx - eps);
+  eps = del + del * del * (p3.x() * del + p2.x());
+  i = ((junk2.i[LOW_HALF] >> 8) & 0xfffffffe) + 356;
+  j = (junk2.i[LOW_HALF] & 511) << 1;
+  al = coar.x(i) * fine.x(j);
+  bet = (coar.x(i) * fine.x(j + 1) + coar.x(i + 1) * fine.x(j)) +
+        coar.x(i + 1) * fine.x(j + 1);
+  rem = (bet + bet * eps) + al * eps;
   res = al + rem;
   cor = (al - res) + rem;
-  if (m>>31) {
-    ex=junk1.i[LOW_HALF];
-    if (res < 1.0) {res+=res; cor+=cor; ex-=1;}
-    if (ex >=-1022) {
-      binexp.i[HIGH_HALF] = (1023+ex)<<20;
-      if  (res == (res+cor*(1.0+error+err_1))) return res*binexp.x();
-      else return -10.0;
+  if (m >> 31) {
+    ex = junk1.i[LOW_HALF];
+    if (res < 1.0) {
+      res += res;
+      cor += cor;
+      ex -= 1;
     }
-    ex = -(1022+ex);
-    binexp.i[HIGH_HALF] = (1023-ex)<<20;
-    res*=binexp.x();
-    cor*=binexp.x();
-    eps=1.00000000001+(error+err_1)*binexp.x();
-    t=1.0+res;
-    y = ((1.0-t)+res)+cor;
-    res=t+y;
-    cor = (t-res)+y;
-    if (res == (res + eps*cor))
-      {binexp.i[HIGH_HALF] = 0x00100000; return (res-1.0)*binexp.x();}
-    else return -10.0;
-  }
-  else {
-    binexp.i[HIGH_HALF] =(junk1.i[LOW_HALF]+767)<<20;
-    if  (res == (res+cor*(1.0+error+err_1)))
-      return res*binexp.x()*t256.x();
-    else return -10.0;
+    if (ex >= -1022) {
+      binexp.i[HIGH_HALF] = (1023 + ex) << 20;
+      if (res == (res + cor * (1.0 + error + err_1)))
+        return res * binexp.x();
+      else
+        return -10.0;
+    }
+    ex = -(1022 + ex);
+    binexp.i[HIGH_HALF] = (1023 - ex) << 20;
+    res *= binexp.x();
+    cor *= binexp.x();
+    eps = 1.00000000001 + (error + err_1) * binexp.x();
+    t = 1.0 + res;
+    y = ((1.0 - t) + res) + cor;
+    res = t + y;
+    cor = (t - res) + y;
+    if (res == (res + eps * cor)) {
+      binexp.i[HIGH_HALF] = 0x00100000;
+      return (res - 1.0) * binexp.x();
+    } else
+      return -10.0;
+  } else {
+    binexp.i[HIGH_HALF] = (junk1.i[LOW_HALF] + 767) << 20;
+    if (res == (res + cor * (1.0 + error + err_1)))
+      return res * binexp.x() * t256.x();
+    else
+      return -10.0;
   }
 }
-}
+} // namespace streflop_libm
