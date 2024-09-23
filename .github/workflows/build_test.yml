@@ -22,30 +22,30 @@ jobs:
           # - os: ubuntu-latest
           #   platform: linux-x64-soft
           #   base_flags: -DSTREFLOP_SOFT=ON
-          # - os: ubuntu-latest
-          #   platform: linux-x64-sse
-          #   base_flags:
-          # - os: ubuntu-latest
-          #   platform: linux-x64-sse-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          # - os: ubuntu-latest
-          #   platform: linux-x64-x87
-          #   base_flags:
-          # - os: ubuntu-latest
-          #   platform: linux-x64-x87-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: linux-x64-sse
+            base_flags:
+          - os: ubuntu-latest
+            platform: linux-x64-sse-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: linux-x64-x87
+            base_flags:
+          - os: ubuntu-latest
+            platform: linux-x64-x87-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: windows-latest
             platform: windows-x64-sse
             base_flags:
-          # - os: windows-latest
-          #   platform: windows-x64-sse-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          # - os: windows-latest
-          #   platform: windows-x64-x87
-          #   base_flags:
-          # - os: windows-latest
-          #   platform: windows-x64-x87-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: windows-latest
+            platform: windows-x64-sse-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: windows-latest
+            platform: windows-x64-x87
+            base_flags:
+          - os: windows-latest
+            platform: windows-x64-x87-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
           # - os: macos-13
           #   platform: macos-x64-sse
           #   base_flags:
@@ -64,17 +64,20 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure CMake
-        run: |
-          cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
 
       - name: Run arithmetic test
+        shell: bash
         working-directory: ${{github.workspace}}/build
         run: |
-          cmake -E chdir ${{github.workspace}}/build cmake --build . --target run_arithmeticTest
-          mv ${{github.workspace}}/build/result-* ${{github.workspace}}/result-${{ matrix.config.platform }}
+          if [ "${{ matrix.config.os }}" == "windows-latest" ]; then
+            ./arithmeticTest.exe ../result-${{ matrix.config.platform }}
+          else
+            ./arithmeticTest ../result-${{ matrix.config.platform }}
+          fi
 
       - name: Setup debug SSH
         # if: ${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}

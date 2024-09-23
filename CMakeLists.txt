@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(streflop VERSION 0.4 LANGUAGES CXX C)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+# If you want to handle multi-configuration generators (like Visual Studio)
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_BINARY_DIR})
+endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -215,9 +223,3 @@ install(TARGETS streflop streflop_libm
 install(FILES ${STREFLOP_HEADERS}
     DESTINATION include/streflop
 )
-
-add_custom_target(run_arithmeticTest
-         COMMAND arithmeticTest ${CMAKE_SOURCE_DIR}/result-${CMAKE_SYSTEM_NAME}
-         DEPENDS arithmeticTest
-         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-     )
