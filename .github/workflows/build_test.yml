@@ -63,16 +63,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build arithmetic test
-        #run: make ${{ matrix.config.base_flags }} arithmeticTest
+      - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake ${{ matrix.config.base_flags}} ..
-          cmake --build .
+          cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
 
       - name: Run arithmetic test
-        run: cd build && ./arithmeticTest ../result-${{ matrix.config.platform }}
+        working-directory: ${{github.workspace}}/build
+        run: |
+          cmake -E chdir ${{github.workspace}}/build cmake --build . --target run_arithmeticTest
+          mv ${{github.workspace}}/build/result-* ${{github.workspace}}/result-${{ matrix.config.platform }}
 
       - name: Setup debug SSH
         # if: ${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}

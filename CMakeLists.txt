@@ -215,3 +215,9 @@ install(TARGETS streflop streflop_libm
 install(FILES ${STREFLOP_HEADERS}
     DESTINATION include/streflop
 )
+
+add_custom_target(run_arithmeticTest
+         COMMAND arithmeticTest ${CMAKE_SOURCE_DIR}/result-${CMAKE_SYSTEM_NAME}
+         DEPENDS arithmeticTest
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+     )
