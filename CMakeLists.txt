@@ -68,7 +68,7 @@ elseif(MSVC)
     # add_compile_options(/fp:strict /arch:SSE2)
     add_compile_options(/fp:strict /fp:except- /Qfast_transcendentals- /fp:contract- /Od /Oi- /Qpar- /GL- /Qspectre-)
     add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838)
-    add_definitions(-D__STDC__=1)
+    # add_definitions(-D__STDC__=1)
 
     # Function to remove C++ options from ASM targets
     function(remove_cpp_options target)
