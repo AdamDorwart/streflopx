@@ -75,7 +75,7 @@ jobs:
         run: cd build && ./arithmeticTest ../result-${{ matrix.config.platform }}
 
       - name: Setup debug SSH
-        if: ${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        if: ${{ failure() }} # && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
         uses: mxschmitt/action-tmate@v3
 
       - name: Upload results
