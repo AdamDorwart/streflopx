@@ -106,7 +106,7 @@ set_target_properties(streflop_libm PROPERTIES
 
 SET(cxxflags "-I\"${CMAKE_CURRENT_SOURCE_DIR}/libm/headers\"")
 set_source_files_properties(${LIBM_FLT32_SOURCES} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_FLT32 ${cxxflags}")
-set_source_files_properties(${LIBM_DBL64_SOURCES} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_DBL64")
+set_source_files_properties(${LIBM_DBL64_SOURCES} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_DBL64 ${cxxflags}")
 if(NOT STREFLOP_SSE AND NOT STREFLOP_NEON)
     set_source_files_properties(${LIBM_LDBL96_SOURCES} PROPERTIES COMPILE_FLAGS "-DLIBM_COMPILING_LDBL96")
 endif()
