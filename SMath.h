@@ -213,7 +213,11 @@ namespace streflop {
 
 // Stolen from math.h. All floating-point numbers can be put in one of these categories.
 #if defined(FP_NAN) || defined(FP_INFINITE) || defined(FP_ZERO) || defined(FP_SUBNORMAL) || defined(FP_NORMAL)
-#warning STREFLOP: FP_XXX flags were already defined and will be redefined! Check you do not use the system libm.
+#if defined(_MSC_VER)
+    #pragma message("STREFLOP: FP_XXX flags were already defined and will be redefined! Check you do not use the system libm.")
+#else
+    #warning STREFLOP: FP_XXX flags were already defined and will be redefined! Check you do not use the system libm.
+#endif
 #undef FP_NAN
 #undef FP_INFINITE
 #undef FP_ZERO
