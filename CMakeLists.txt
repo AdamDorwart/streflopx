@@ -55,32 +55,14 @@ elseif(MSVC)
     # Enable MASM
     enable_language(ASM_MASM)
     set(fpu_settings_asm "${CMAKE_CURRENT_SOURCE_DIR}/FPUSettings.asm")
-
-    # Create a separate target for the ASM file
-    add_library(fpu_settings OBJECT ${fpu_settings_asm})
     set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
     
-    # Set MASM-specific flags for the fpu_settings target
-    # target_compile_options(fpu_settings PRIVATE /nologo /W3)
 
     # Add global C/C++ compile options
     # What hasn't worked
-    # add_compile_options(/fp:strict /arch:SSE2)
-    add_compile_options(/fp:strict /fp:except- /Qfast_transcendentals- /fp:contract- /Od /Oi- /Qpar- /GL- /Qspectre-)
+    # add_compile_options(/fp:strict /arch:SSE2 /fp:except- /Qfast_transcendentals- /fp:contract- /Od /Oi- /Qpar- /GL- /Qspectre-)
     add_compile_options(/wd4838)
     add_definitions(-D__STDC__=1)
-
-    # Function to remove C++ options from ASM targets
-    function(remove_cpp_options target)
-        get_target_property(target_options ${target} COMPILE_OPTIONS)
-        if(target_options)
-            list(REMOVE_ITEM target_options /wd4838)
-            set_target_properties(${target} PROPERTIES COMPILE_OPTIONS "${target_options}")
-        endif()
-    endfunction()
-
-    # Remove C++ options from the ASM target
-    # remove_cpp_options(fpu_settings)
 endif()
 
 # Platform-specific linker flags
@@ -180,12 +162,7 @@ if(STREFLOP_SOFT)
 endif()
 
 # Define the main library
-add_library(streflop STATIC ${STREFLOP_SOURCES})
-
-if(MSVC)
-    # Add the ASM object library to streflop
-    target_link_libraries(streflop PRIVATE fpu_settings)
-endif()
+add_library(streflop STATIC ${STREFLOP_SOURCES} ${fpu_settings_asm})
 
 # If STREFLOP_SOFT is enabled, add the object libraries to the main library
 if(STREFLOP_SOFT)
