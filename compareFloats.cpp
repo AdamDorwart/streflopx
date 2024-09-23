@@ -62,7 +62,7 @@ std::vector<FloatData> readBinaryFile(const std::string& filename) {
     
     if (!file) {
         std::cerr << "Error opening file: " << filename << std::endl;
-        return data;
+        return data;  // Return empty vector if file can't be opened
     }
     
     FileHeader header;
@@ -70,7 +70,7 @@ std::vector<FloatData> readBinaryFile(const std::string& filename) {
     
     if (memcmp(header.magic, "SREF", 4) != 0) {
         std::cerr << "Invalid file format: " << filename << std::endl;
-        return data;
+        return data;  // Return empty vector if file format is invalid
     }
     
     for (uint32_t i = 0; i < header.elementCount; ++i) {
@@ -79,7 +79,7 @@ std::vector<FloatData> readBinaryFile(const std::string& filename) {
         if (file.fail()) {
             std::cerr << "Error reading file: " << filename << std::endl;
             data.clear();
-            return data;
+            return data;  // Return empty vector if read error occurs
         }
         data.push_back(FloatData(buffer, header.dataSize));
     }
@@ -94,30 +94,27 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
         return;
     }
 
-    std::vector<std::vector<FloatData> > allData;
+    std::vector<std::vector<FloatData>> allData;
     std::vector<FileHeader> headers;
 
-    for (size_t i = 0; i < filenames.size(); ++i) {
-        std::ifstream file(filenames[i].c_str(), std::ios::binary);
+    for (const auto& filename : filenames) {
+        std::vector<FloatData> data = readBinaryFile(filename);
+        if (data.empty()) {
+            std::cout << "Skipping file due to read error: " << filename << std::endl;
+            continue;
+        }
+        
+        std::ifstream file(filename.c_str(), std::ios::binary);
         if (!file) {
-            std::cerr << "Error opening file: " << filenames[i] << std::endl;
+            std::cerr << "Error opening file: " << filename << std::endl;
             continue;
         }
         
         FileHeader header;
         file.read(reinterpret_cast<char*>(&header), sizeof(FileHeader));
-        
-        if (memcmp(header.magic, "SREF", 4) != 0) {
-            std::cerr << "Invalid file format: " << filenames[i] << std::endl;
-            continue;
-        }
-        
-        headers.push_back(header);
         file.close();
         
-        std::vector<FloatData> data = readBinaryFile(filenames[i]);
-        if (data.empty()) continue;
-        
+        headers.push_back(header);
         allData.push_back(data);
     }
 
@@ -239,7 +236,19 @@ void compareAllTypes(const std::vector<std::string>& basePaths) {
     for (int i = 0; i < numTypes; ++i) {
         std::vector<std::string> filenames;
         for (size_t j = 0; j < basePaths.size(); ++j) {
-            filenames.push_back(basePaths[j] + "_" + types[i] + ".bin");
+            std::string filename = basePaths[j] + "_" + types[i] + ".bin";
+            std::ifstream file(filename);
+            if (file.good()) {
+                filenames.push_back(filename);
+                file.close();
+            } else {
+                std::cout << "Warning: File not found - " << filename << std::endl;
+            }
+        }
+        
+        if (filenames.size() < 2) {
+            std::cout << "Not enough valid files to compare for " << types[i] << ". Skipping.\n\n";
+            continue;
         }
         
         if (std::string(types[i]).substr(0, 6) == "simple") {
