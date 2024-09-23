@@ -156,15 +156,15 @@ jobs:
 
       - name: Compare results
         run: |
-          ./compareFloats \
           # artifacts/results-linux-x64-soft/result-linux-x64-soft \
+          ./compareFloats \
           artifacts/results-linux-x64-sse/result-linux-x64-sse \
           artifacts/results-linux-x64-x87/result-linux-x64-x87 \
-          # artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
+          artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
           artifacts/results-windows-x64-sse/result-windows-x64-sse \
           artifacts/results-windows-x64-x87/result-windows-x64-x87 \
-          # artifacts/results-macos-x64-sse/result-macos-x64-sse \
-          # artifacts/results-macos-arm64-neon/result-macos-arm64-neon
+          artifacts/results-macos-x64-sse/result-macos-x64-sse \
+          artifacts/results-macos-arm64-neon/result-macos-arm64-neon
 
       - name: Compare results (No Denormals)
         run: |
@@ -178,11 +178,11 @@ jobs:
           ./compareFloats \
           artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals \
           artifacts/results-linux-x64-x87-no-denormals/result-linux-x64-x87-no-denormals \
-          # artifacts/results-linux-arm64-neon-no-denormals/result-linux-arm64-neon-no-denormals \
+          artifacts/results-linux-arm64-neon-no-denormals/result-linux-arm64-neon-no-denormals \
           artifacts/results-windows-x64-sse-no-denormals/result-windows-x64-sse-no-denormals \
           artifacts/results-windows-x64-x87-no-denormals/result-windows-x64-x87-no-denormals \
-          # artifacts/results-macos-x64-sse-no-denormals/result-macos-x64-sse-no-denormals \
-          # artifacts/results-macos-arm64-neon-no-denormals/result-macos-arm64-neon-no-denormals
+          artifacts/results-macos-x64-sse-no-denormals/result-macos-x64-sse-no-denormals \
+          artifacts/results-macos-arm64-neon-no-denormals/result-macos-arm64-neon-no-denormals
 
       - name: Upload results
         uses: actions/upload-artifact@v4
