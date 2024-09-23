@@ -44,16 +44,23 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
         add_compile_options(-mno-ms-bitfields)
     endif()
 elseif(MSVC)
-    # MSVC-specific flags (to be expanded)
-    #add_compile_options(/W4)
+    # MSVC-specific flags for C/C++
     add_definitions(-D__STDC__=1)
-    
-    #add_compile_options(/permissive-
     add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except-)
-    
+
+    # Enable MASM
     enable_language(ASM_MASM)
     set(fpu_settings_asm "FPUSettings.asm")
     set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
+
+    # MASM-specific flags (if any)
+    set(CMAKE_ASM_MASM_FLAGS "${CMAKE_ASM_MASM_FLAGS} /nologo /W3")
+
+    # Function to set C/C++ compile options for a target
+    function(set_windows_compile_options target)
+        target_compile_options(${target} PRIVATE 
+            $<$<COMPILE_LANGUAGE:C,CXX>:/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except->)
+    endfunction()
 endif()
 
 # Platform-specific linker flags
@@ -153,7 +160,10 @@ if(STREFLOP_SOFT)
 endif()
 
 # Create the main streflop library
-add_library(streflop STATIC EXCLUDE_FROM_ALL ${STREFLOP_SOURCES} ${fpu_settings_asm})
+add_library(streflop STATIC ${STREFLOP_SOURCES} ${fpu_settings_asm})
+if(MSVC)
+    set_windows_compile_options(streflop)
+endif()
 
 # If STREFLOP_SOFT is enabled, add the object libraries to the main library
 if(STREFLOP_SOFT)
