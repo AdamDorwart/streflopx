@@ -61,7 +61,7 @@ elseif(MSVC)
     set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
     
     # Set MASM-specific flags for the fpu_settings target
-    target_compile_options(fpu_settings PRIVATE /nologo /W3)
+    # target_compile_options(fpu_settings PRIVATE /nologo /W3)
 
     # Add global C/C++ compile options
     # What hasn't worked
@@ -74,14 +74,13 @@ elseif(MSVC)
     function(remove_cpp_options target)
         get_target_property(target_options ${target} COMPILE_OPTIONS)
         if(target_options)
-            list(REMOVE_ITEM target_options 
-                /Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838)
+            list(REMOVE_ITEM target_options /wd4838)
             set_target_properties(${target} PROPERTIES COMPILE_OPTIONS "${target_options}")
         endif()
     endfunction()
 
     # Remove C++ options from the ASM target
-    remove_cpp_options(fpu_settings)
+    # remove_cpp_options(fpu_settings)
 endif()
 
 # Platform-specific linker flags
