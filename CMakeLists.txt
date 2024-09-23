@@ -49,7 +49,7 @@ elseif(MSVC)
     add_definitions(-D__STDC__=1)
     
     #add_compile_options(/permissive-
-    add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except-)
+    # add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except-)
     
     enable_language(ASM_MASM)
     set(fpu_settings_asm "FPUSettings.asm")
