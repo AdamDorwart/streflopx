@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <cstring>
+#include <vector>
 using namespace std;
 // clock
 #include <time.h>
@@ -46,24 +47,24 @@ void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
     of.write(reinterpret_cast<char*>(&header), sizeof(FileHeader));
 }
 
-template<class FloatType> inline void writeFloat(ofstream& of, FloatType f) {
+template<class FloatType> inline void writeFloat(std::ofstream& of, FloatType f) {
     int nbytes = sizeof(f);
     #ifdef Extended
     if (std::is_same<FloatType, streflop::Extended>::value) {
         nbytes = 10;  // Always use 10 bytes for Extended, regardless of its actual size
     }
     #endif
-    char* thefloat = reinterpret_cast<char*>(&f);
+    const char* thefloat = reinterpret_cast<const char*>(&f);
     long check = 1;
     // big endian OK, reverse little endian
     if (*reinterpret_cast<char*>(&check) == 1) {
-        char buffer[nbytes];
+        std::vector<char> buffer(nbytes);
         for (int i=0; i<nbytes; ++i) buffer[i] = thefloat[nbytes-1-i];
-        of.write(buffer,nbytes);
+        of.write(buffer.data(), nbytes);
     } else {
-        of.write(thefloat,nbytes);
+        of.write(thefloat, nbytes);
     }
-};
+}
 
 template<class FloatType> void doTest(string s, string name) {
 
