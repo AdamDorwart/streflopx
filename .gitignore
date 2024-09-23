@@ -8,3 +8,6 @@ streflop.a
 arithmeticTest*
 compareFloats*
 float_comparison.log
+build
+.cache
+results

@@ -7,21 +7,21 @@
 -all: streflop.a libstreflop$(FPUNAME)$(NDNAME).so
 +all: streflop.a libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 arithmeticTest$(FPUNAME)$(NDNAME)$(EXE_SUFFIX) randomTest$(FPUNAME)$(NDNAME)$(EXE_SUFFIX)
  
- Random.o: Random.cpp Random.h Makefile FPUSettings.h Math.h streflop.h
+ Random.o: Random.cpp Random.h Makefile FPUSettings.h SMath.h streflop.h
  	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) Random.cpp -o Random.o
 @@ -67,27 +67,34 @@ else
  	@ln -fs streflop.a libstreflop.a
  endif
  
--libstreflop$(FPUNAME)$(NDNAME).so: Math.o Random.o ${USE_SOFT_BINARY}
+-libstreflop$(FPUNAME)$(NDNAME).so: SMath.o Random.o ${USE_SOFT_BINARY}
 +check: arithmeticTest$(FPUNAME)$(NDNAME)$(EXE_SUFFIX)
 +	@./$< arithmeticTest$(FPUNAME)$(NDNAME)
 +	@md5sum --warn --check arithmeticTest$(FPUNAME)$(NDNAME).md5
 +
-+libstreflop$(FPUNAME)$(NDNAME).so.0.0.0: Math.o Random.o ${USE_SOFT_BINARY}
++libstreflop$(FPUNAME)$(NDNAME).so.0.0.0: SMath.o Random.o ${USE_SOFT_BINARY}
  	$(MAKE) -C libm
  	@rm -f libstreflop$(FPUNAME)$(NDNAME).so
- 	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+ 	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) SMath.o Random.o ${USE_SOFT_BINARY}
  
 -arithmeticTest$(EXE_SUFFIX): arithmeticTest.cpp streflop.a
 -	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) arithmeticTest.cpp streflop.a -o $@

@@ -1,5 +1,5 @@
---- a/Math.h
-+++ b/Math.h
+--- a/SMath.h
++++ b/SMath.h
 @@ -21,8 +21,20 @@
  namespace streflop_libm {
  using streflop::Simple;
@@ -152,8 +152,8 @@
  void __mpsqrt(mp_no *x, mp_no *y, int p) {
  #include "mpsqrt.h"
  
---- a/Math.cpp
-+++ b/Math.cpp
+--- a/SMath.cpp
++++ b/SMath.cpp
 @@ -44,3 +44,36 @@ namespace streflop {
  #endif
  

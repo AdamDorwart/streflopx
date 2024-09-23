@@ -114,7 +114,7 @@ endif()
 
 # Define streflop header files
 set(STREFLOP_HEADERS
-    Math.h
+    SMath.h
     System.h
     FPUSettings.h
     IntegerTypes.h
@@ -125,7 +125,7 @@ set(STREFLOP_HEADERS
 
 # Main streflop sources
 set(STREFLOP_SOURCES
-    Math.cpp
+    SMath.cpp
     Random.cpp
 )
 
