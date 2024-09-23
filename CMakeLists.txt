@@ -64,7 +64,10 @@ elseif(MSVC)
     target_compile_options(fpu_settings PRIVATE /nologo /W3)
 
     # Add global C/C++ compile options
-    add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:strict /arch:SSE2)
+    # What hasn't worked
+    # add_compile_options(/fp:strict /arch:SSE2)
+    add_compile_options(/fp:strict /fp:except- /Qfast_transcendentals- /fp:contract- /Od /Oi- /Qpar- /GL- /Qspectre-)
+    add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838)
     add_definitions(-D__STDC__=1)
 
     # Function to remove C++ options from ASM targets
@@ -72,7 +75,7 @@ elseif(MSVC)
         get_target_property(target_options ${target} COMPILE_OPTIONS)
         if(target_options)
             list(REMOVE_ITEM target_options 
-                /Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:strict /arch:SSE2)
+                /Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838)
             set_target_properties(${target} PROPERTIES COMPILE_OPTIONS "${target_options}")
         endif()
     endfunction()
