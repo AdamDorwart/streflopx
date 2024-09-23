@@ -52,15 +52,15 @@ elseif(MSVC)
     add_library(fpu_settings OBJECT ${fpu_settings_asm})
     set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
     
-    # Set MASM-specific flags for the fpu_settings target
-    target_compile_options(fpu_settings PRIVATE /nologo /W3)
-
-    # Function to set C/C++ compile options for a target
-    function(set_cpp_compile_options target)
-        target_compile_definitions(${target} PRIVATE __STDC__=1)
-        target_compile_options(${target} PRIVATE 
-            /Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except-)
-    endfunction()
+    # Set C/C++ compile options
+    set(MSVC_CPP_OPTIONS 
+        /Zc:__cplusplus 
+        /wd4146 
+        /wd4711 
+        /wd5208 
+        /wd4838 
+        /fp:except-
+    )
 endif()
 
 # Platform-specific linker flags
@@ -167,7 +167,8 @@ if(MSVC)
     target_link_libraries(streflop PRIVATE fpu_settings)
     
     # Apply C/C++ options to streflop
-    set_cpp_compile_options(streflop)
+    target_compile_definitions(streflop PRIVATE __STDC__=1)
+    target_compile_options(streflop PRIVATE ${MSVC_CPP_OPTIONS})
 endif()
 
 # If STREFLOP_SOFT is enabled, add the object libraries to the main library
