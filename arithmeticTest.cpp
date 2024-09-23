@@ -18,7 +18,7 @@ using namespace std;
 #include <time.h>
 
 #include "streflop.h"
-using namespace streflop;
+// using namespace streflop;
 
 #pragma pack(push, 1)
 struct FileHeader {
@@ -37,8 +37,8 @@ void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
     FileHeader header;
     memcpy(header.magic, "SREF", 4);  // SREF for STandalone REproducible FLOating-Point
     header.version = 1;
-    header.dataType = std::is_same<FloatType, Simple>::value ? 0 :
-                      (std::is_same<FloatType, Double>::value ? 1 : 2);
+    header.dataType = std::is_same<FloatType, streflop::Simple>::value ? 0 :
+                      (std::is_same<FloatType, streflop::Double>::value ? 1 : 2);
     header.dataSize = sizeof(FloatType);
     header.elementCount = elementCount;
     header.extraFlags = extraFlags;
@@ -49,7 +49,7 @@ void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
 template<class FloatType> inline void writeFloat(ofstream& of, FloatType f) {
     int nbytes = sizeof(f);
     #ifdef Extended
-    if (std::is_same<FloatType, Extended>::value) {
+    if (std::is_same<FloatType, streflop::Extended>::value) {
         nbytes = 10;  // Always use 10 bytes for Extended, regardless of its actual size
     }
     #endif
@@ -67,7 +67,7 @@ template<class FloatType> inline void writeFloat(ofstream& of, FloatType f) {
 
 template<class FloatType> void doTest(string s, string name) {
 
-    streflop_init<FloatType>();
+    streflop::streflop_init<FloatType>();
 
     string basic_filename = s + "_" + name + "_basic.bin";
     ofstream basicfile(basic_filename.c_str());
@@ -93,14 +93,14 @@ template<class FloatType> void doTest(string s, string name) {
     FloatType f = 42;
 
     // Trap NaNs
-    feraiseexcept(FE_INVALID);
+    feraiseexcept(streflop::FE_INVALID);
 
     writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
     // No math function is called before this loop
     for (int i=0; i<10000; ++i) {
-        f = RandomIE(f, FloatType(i));
-        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + RandomIE<FloatType>(1.0,2.0);
+        f = streflop::RandomIE(f, FloatType(i));
+        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + streflop::RandomIE<FloatType>(1.0,2.0);
         writeFloat(basicfile, f);
     }
     basicfile.close();
@@ -133,7 +133,7 @@ template<class FloatType> void doTest(string s, string name) {
     writeFloat(infnanfile, f);
 
     // A few NaN checks
-    feclearexcept(FE_INVALID);
+    feclearexcept(streflop::FE_INVALID);
     f *= FloatType(0.0); // inf * 0
     writeFloat(infnanfile, f);
     f = FloatType(+0.0);
@@ -150,12 +150,12 @@ template<class FloatType> void doTest(string s, string name) {
     infnanfile.close();
 
     // Trap NaNs again
-    feraiseexcept(FE_INVALID);
+    feraiseexcept(streflop::FE_INVALID);
 
     writeFileHeader<FloatType>(mathlibfile, 10000, 2);  // 2 for math library operations
     // Call the Math functions
     for (int i=0; i<10000; ++i) {
-        f = streflop::tanh(streflop::cbrt(streflop::fabs(streflop::log2(streflop::sin(FloatType(RandomII(0,i)))+FloatType(2.0)))+FloatType(1.0)));
+        f = streflop::tanh(streflop::cbrt(streflop::fabs(streflop::log2(streflop::sin(FloatType(streflop::RandomII(0,i)))+FloatType(2.0)))+FloatType(1.0)));
         writeFloat(mathlibfile, f);
     }
 
@@ -183,7 +183,7 @@ template<class FloatType> ostream& displayHex(ostream& out, FloatType f) {
 
 int main(int argc, const char** argv) {
 
-    RandomInit(42);
+    streflop::RandomInit(42);
 
     if (argc<2) {
         cout << "You should provide a base file name for the arithmetic test binary results. This base name will be appended the suffix _basic for basic operations not using the math library, _nan for denormals and NaN operations, and _lib for results calling the math library functions (sqrt, sin, etc.). The extension .bin is then finally appended to the file name." << endl;
@@ -191,10 +191,10 @@ int main(int argc, const char** argv) {
         return 1;
     }
 
-    doTest<Simple>(argv[1], "simple");
-    doTest<Double>(argv[1], "double");
+    doTest<streflop::Simple>(argv[1], "simple");
+    doTest<streflop::Double>(argv[1], "double");
 #if defined(Extended)
-    doTest<Extended>(argv[1], "extended");
+    doTest<streflop::Extended>(argv[1], "extended");
 #endif
 
     return 0;

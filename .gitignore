@@ -7,6 +7,7 @@ libstreflop.a
 streflop.a
 arithmeticTest*
 compareFloats*
+randomTest*
 float_comparison.log
 build
 .cache
