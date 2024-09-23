@@ -64,7 +64,7 @@ elseif(MSVC)
     target_compile_options(fpu_settings PRIVATE /nologo /W3)
 
     # Add global C/C++ compile options
-    add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838 /fp:except-)
+    add_compile_options(/Zc:__cplusplus /wd4146 /wd4711 /wd5208 /wd4838)
     add_definitions(-D__STDC__=1)
 
     # Function to remove C++ options from ASM targets
