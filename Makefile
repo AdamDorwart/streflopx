@@ -47,11 +47,11 @@ endif
 
 all: streflop.a libstreflop$(FPUNAME)$(NDNAME).so
 
-Random.o: Random.cpp Random.h Makefile FPUSettings.h Math.h streflop.h
+Random.o: Random.cpp Random.h Makefile FPUSettings.h SMath.h streflop.h
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) Random.cpp -o Random.o
 
-Math.o: Math.cpp Math.h Makefile FPUSettings.h streflop.h
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) Math.cpp -o Math.o
+SMath.o: SMath.cpp SMath.h Makefile FPUSettings.h streflop.h
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) SMath.cpp -o SMath.o
 
 SoftFloatWrapperSimple.o: SoftFloatWrapper.cpp SoftFloatWrapper.h Makefile FPUSettings.h streflop.h
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -DN_SPECIALIZED=32 SoftFloatWrapper.cpp -o $@
@@ -62,24 +62,24 @@ SoftFloatWrapperDouble.o: SoftFloatWrapper.cpp SoftFloatWrapper.h Makefile FPUSe
 SoftFloatWrapperExtended.o: SoftFloatWrapper.cpp SoftFloatWrapper.h Makefile FPUSettings.h streflop.h
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -DN_SPECIALIZED=96 SoftFloatWrapper.cpp -o $@
 
-streflop.a: Math.o Random.o ${USE_SOFT_BINARY}
+streflop.a: SMath.o Random.o ${USE_SOFT_BINARY}
 	$(MAKE) -C libm
 	@rm -f streflop.a
-	@ar r streflop.a $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+	@ar r streflop.a $(LIBM_OBJECTS) SMath.o Random.o ${USE_SOFT_BINARY}
 ifdef MINGDIR
 	@copy streflop.a libstreflop.a
 else
 	@ln -fs streflop.a libstreflop.a
 endif
 
-libstreflop$(FPUNAME)$(NDNAME).so: Math.o Random.o ${USE_SOFT_BINARY}
+libstreflop$(FPUNAME)$(NDNAME).so: SMath.o Random.o ${USE_SOFT_BINARY}
 	$(MAKE) -C libm
 	@rm -f libstreflop$(FPUNAME)$(NDNAME).so
-	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+	$(CXX) -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 $(LDFLAGS) $(LIBM_OBJECTS) SMath.o Random.o ${USE_SOFT_BINARY}
 ifeq ($(detected_OS),Darwin)
-	$(CXX) -dynamiclib -o libstreflop$(FPUNAME)$(NDNAME).dylib $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+	$(CXX) -dynamiclib -o libstreflop$(FPUNAME)$(NDNAME).dylib $(LDFLAGS) $(LIBM_OBJECTS) SMath.o Random.o ${USE_SOFT_BINARY}
 else
-	$(CXX) -shared -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) Math.o Random.o ${USE_SOFT_BINARY}
+	$(CXX) -shared -o libstreflop$(FPUNAME)$(NDNAME).so.0.0.0 -shared -Wl,-soname=libstreflop$(FPUNAME)$(NDNAME).so.0 $(LDFLAGS) $(LIBM_OBJECTS) SMath.o Random.o ${USE_SOFT_BINARY}
 endif
 
 arithmeticTest$(EXE_SUFFIX): arithmeticTest.cpp streflop.a
@@ -115,7 +115,7 @@ LIBM_STREFLOP = libm/import.pl libm/Makefile libm/streflop_libm_bridge.h libm/RE
 
 SOFTFLOAT_STREFLOP = softfloat/milieu.h softfloat/softfloat.h softfloat/SoftFloat-README.txt softfloat/SoftFloat.txt softfloat/README.txt softfloat/SoftFloat-history.txt softfloat/SoftFloat-source.txt softfloat/softfloat.cpp softfloat/softfloat-macros softfloat/softfloat-specialize
 
-BASE_STREFLOP = arithmeticTest.cpp randomTest.cpp FPUSettings.h IntegerTypes.h LGPL.txt Makefile Makefile.common Makefile.libm_objects Math.cpp Math.h Random.cpp Random.h README.txt SoftFloatWrapper.cpp SoftFloatWrapper.h streflop.h System.h X87DenormalSquasher.h
+BASE_STREFLOP = arithmeticTest.cpp randomTest.cpp FPUSettings.h IntegerTypes.h LGPL.txt Makefile Makefile.common Makefile.libm_objects SMath.cpp SMath.h Random.cpp Random.h README.txt SoftFloatWrapper.cpp SoftFloatWrapper.h streflop.h System.h X87DenormalSquasher.h
 
 # Tar only once for both archive formats
 package:
