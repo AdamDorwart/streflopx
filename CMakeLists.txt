@@ -57,8 +57,6 @@ elseif(MSVC)
     set(fpu_settings_asm "${CMAKE_CURRENT_SOURCE_DIR}/FPUSettings.asm")
     set_source_files_properties(${fpu_settings_asm} PROPERTIES LANGUAGE ASM_MASM)
     
-
-    # Add global C/C++ compile options
     # What hasn't worked
     # add_compile_options(/fp:strict /arch:SSE2 /fp:except- /Qfast_transcendentals- /fp:contract- /Od /Oi- /Qpar- /GL- /Qspectre-)
     add_compile_options(/wd4838)
