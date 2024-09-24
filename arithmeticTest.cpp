@@ -49,12 +49,12 @@ void logFPCR(const std::string& location) {
 
 class DeterministicRNG {
 private:
-    uint64_t state;
+    streflop::Double state;
 public:
-    DeterministicRNG(uint64_t seed) : state(seed) {}
-    double next() {
+    DeterministicRNG(streflop::Double seed) : state(seed) {}
+    streflop::Double next() {
         state = state * 6364136223846793005ULL + 1442695040888963407ULL;
-        return static_cast<double>(state >> 11) / static_cast<double>(UINT64_MAX >> 11);
+        return static_cast<streflop::Double>(state >> 11) / static_cast<streflop::Double>(UINT64_MAX >> 11);
     }
 };
 
