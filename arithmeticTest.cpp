@@ -14,7 +14,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
-#include <format>
+#include <sstream>
 #include <cstdint>
 #include <bitset>
 #include <iomanip>
@@ -34,6 +34,12 @@ struct FileHeader {
     uint32_t extraFlags;  // For future use (e.g., to indicate if it's basic, nan, or lib data)
 };
 #pragma pack(pop)
+
+std::string format_hex(uint32_t value) {
+    std::stringstream ss;
+    ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << value;
+    return ss.str();
+}
 
 uint32_t getFPCR() {
     uint32_t fpcr;
@@ -78,7 +84,7 @@ void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::stri
         std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
     };
 
-    print_row("Raw Value", std::format("0x{:08x}", prev_fpcr), std::format("0x{:08x}", curr_fpcr));
+    print_row("Raw Value", format_hex(prev_fpcr), format_hex(curr_fpcr));
 
     std::bitset<16> prev_bits(prev_fpcr), curr_bits(curr_fpcr);
 
@@ -125,7 +131,7 @@ void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::s
         std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
     };
 
-    print_row("Raw Value", std::format("0x{:08x}", prev_mxcsr), std::format("0x{:08x}", curr_mxcsr));
+    print_row("Raw Value", format_hex(prev_mxcsr), format_hex(curr_mxcsr));
 
     std::bitset<32> prev_bits(prev_mxcsr), curr_bits(curr_mxcsr);
 
