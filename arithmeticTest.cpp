@@ -118,6 +118,8 @@ template<class FloatType> void doTest(string s, string name) {
     
     FloatType f = 42;
 
+    uint32_t lastFPCR = getFPCR();
+    std::cout << "Initial FPCR: 0x" << std::hex << lastFPCR << std::dec << std::endl;
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
 
@@ -127,8 +129,23 @@ template<class FloatType> void doTest(string s, string name) {
     for (int i=0; i<10000; ++i) {
         // f = streflop::RandomIE(f, FloatType(i));
         f = f + FloatType(1.0);
-        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + FloatType(1.0);
+        for (int j=0; j<100; ++j) {
+            f += FloatType(0.3) / f + FloatType(1.0);
+            
+            uint32_t currentFPCR = getFPCR();
+            if (currentFPCR != lastFPCR) {
+                logFile << "FPCR changed at iteration " << i << ", sub-iteration " << j 
+                        << ". New value: 0x" << std::hex << currentFPCR << std::dec << std::endl;
+                lastFPCR = currentFPCR;
+            }
+        }
         writeFloat(basicfile, f);
+        uint32_t currentFPCR = getFPCR();
+        if (currentFPCR != lastFPCR) {
+            logFile << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
+                    << std::hex << currentFPCR << std::dec << std::endl;
+            lastFPCR = currentFPCR;
+        }
     }
     basicfile.close();
 
