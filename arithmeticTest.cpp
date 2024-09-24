@@ -62,6 +62,12 @@ uint32_t getMXCSR() {
     return mxcsr;
 }
 
+std::string uint32_to_hex(uint32_t value) {
+    std::stringstream ss;
+    ss << "0x" << std::hex << std::setw(8) << std::setfill('0') << value;
+    return ss.str();
+}
+
 void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::string& location) {
     std::cout << "FPCR comparison at " << location << ":" << std::endl;
     std::cout << std::setw(30) << std::left << "Setting" << " | " << std::setw(20) << "Previous" << " | " << std::setw(20) << "Current" << std::endl;
@@ -71,14 +77,14 @@ void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::stri
         std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
     };
 
-    print_row("Raw Value", "0x" + std::to_string(prev_fpcr), "0x" + std::to_string(curr_fpcr));
+    print_row("Raw Value", std::format("0x{:08x}", prev_fpcr), std::format("0x{:08x}", curr_fpcr));
 
     std::bitset<16> prev_bits(prev_fpcr), curr_bits(curr_fpcr);
 
     // Exception Masks
     std::vector<std::string> exceptions = {"Invalid Operation", "Denormal Operand", "Divide by Zero", "Overflow", "Underflow", "Precision"};
     for (int i = 0; i < 6; ++i) {
-        print_row("Exception Mask: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
+        print_row("Except Mask: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
     }
 
     // Precision Control
@@ -118,19 +124,19 @@ void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::s
         std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
     };
 
-    print_row("Raw Value", "0x" + std::to_string(prev_mxcsr), "0x" + std::to_string(curr_mxcsr));
+    print_row("Raw Value", std::format("0x{:08x}", prev_mxcsr), std::format("0x{:08x}", curr_mxcsr));
 
     std::bitset<32> prev_bits(prev_mxcsr), curr_bits(curr_mxcsr);
 
     // Exception Flags
     std::vector<std::string> exceptions = {"Invalid Operation", "Denormal", "Divide by Zero", "Overflow", "Underflow", "Precision"};
     for (int i = 0; i < 6; ++i) {
-        print_row("Exception Flag: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
+        print_row("Except Flag: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
     }
 
     // Exception Masks
     for (int i = 0; i < 6; ++i) {
-        print_row("Exception Mask: " + exceptions[i], std::to_string(prev_bits[i+7]), std::to_string(curr_bits[i+7]));
+        print_row("Except Mask: " + exceptions[i], std::to_string(prev_bits[i+7]), std::to_string(curr_bits[i+7]));
     }
 
     // Rounding Control
