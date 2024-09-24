@@ -47,16 +47,25 @@ void logFPCR(const std::string& location) {
     std::cout << "FPCR at " << location << ": 0x" << std::hex << getFPCR() << std::dec << std::endl;
 }
 
-class DeterministicRNG {
-private:
-    uint64_t state;
-public:
-    DeterministicRNG(uint64_t seed) : state(seed) {}
-    streflop::Double next() {
-        state = state * 6364136223846793005ULL + 1442695040888963407ULL;
-        return static_cast<streflop::Double>(state >> 11) / static_cast<streflop::Double>(UINT64_MAX >> 11);
-    }
-};
+#if defined(_MSC_VER)
+    #include <intrin.h>
+#endif
+
+uint32_t getMXCSR() {
+    uint32_t mxcsr;
+    #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+        mxcsr = _mm_getcsr();
+    #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+        __asm__ __volatile__("stmxcsr %0" : "=m" (mxcsr));
+    #else
+        mxcsr = 0; // Placeholder for other platforms
+    #endif
+    return mxcsr;
+}
+
+void logMXCSR(const std::string& location) {
+    std::cout << "MXCSR at " << location << ": 0x" << std::hex << getMXCSR() << std::dec << std::endl;
+}
 
 template<class FloatType>
 void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
@@ -119,9 +128,12 @@ template<class FloatType> void doTest(string s, string name) {
     FloatType f = 42;
 
     uint32_t lastFPCR = getFPCR();
+    uint32_t lastMXCSR = getMXCSR();
     std::cout << "Initial FPCR: 0x" << std::hex << lastFPCR << std::dec << std::endl;
+    std::cout << "Initial MXCSR: 0x" << std::hex << lastMXCSR << std::dec << std::endl;
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
+    fesetround(streflop::FE_TONEAREST);
 
     writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
@@ -129,6 +141,18 @@ template<class FloatType> void doTest(string s, string name) {
     for (int i=0; i<10000; ++i) {
         // f = streflop::RandomIE(f, FloatType(i));
         f = f + FloatType(1.0);
+        uint32_t currentFPCR = getFPCR();
+        if (currentFPCR != lastFPCR) {
+            std::cout << "FPCR changed at iteration " << i << " (before inner loop). New value: 0x" 
+                    << std::hex << currentFPCR << std::dec << std::endl;
+            lastFPCR = currentFPCR;
+        }
+        uint32_t currentMXCSR = getMXCSR();
+        if (currentMXCSR != lastMXCSR) {
+            std::cout << "MXCSR changed at iteration " << i << " (before inner loop). New value: 0x" 
+                    << std::hex << currentMXCSR << std::dec << std::endl;
+            lastMXCSR = currentMXCSR;
+        }
         for (int j=0; j<100; ++j) {
             f += FloatType(0.3) / f + FloatType(1.0);
             
@@ -138,6 +162,12 @@ template<class FloatType> void doTest(string s, string name) {
                         << ". New value: 0x" << std::hex << currentFPCR << std::dec << std::endl;
                 lastFPCR = currentFPCR;
             }
+            uint32_t currentMXCSR = getMXCSR();
+            if (currentMXCSR != lastMXCSR) {
+                std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j 
+                        << ". New value: 0x" << std::hex << currentMXCSR << std::dec << std::endl;
+                lastMXCSR = currentMXCSR;
+            }
         }
         writeFloat(basicfile, f);
         uint32_t currentFPCR = getFPCR();
@@ -145,6 +175,12 @@ template<class FloatType> void doTest(string s, string name) {
             std::cout << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
                     << std::hex << currentFPCR << std::dec << std::endl;
             lastFPCR = currentFPCR;
+        }
+        uint32_t currentMXCSR = getMXCSR();
+        if (currentMXCSR != lastMXCSR) {
+            std::cout << "MXCSR changed at iteration " << i << " (after inner loop). New value: 0x" 
+                    << std::hex << currentMXCSR << std::dec << std::endl;
+            lastMXCSR = currentMXCSR;
         }
     }
     basicfile.close();
