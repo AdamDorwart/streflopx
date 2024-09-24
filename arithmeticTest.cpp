@@ -44,7 +44,43 @@ uint32_t getFPCR() {
 }
 
 void logFPCR(const std::string& location) {
-    std::cout << "FPCR at " << location << ": 0x" << std::hex << getFPCR() << std::dec << std::endl;
+    uint32_t fpcr = getFPCR();
+    std::cout << "FPCR at " << location << ": 0x" << std::hex << std::setw(4) << std::setfill('0') << fpcr << std::dec << std::endl;
+    
+    // Create a bitset for easy bit access
+    std::bitset<16> bits(fpcr);
+
+    // Exception Masks (1 = exception is masked)
+    std::cout << "  Exception Masks:" << std::endl;
+    std::cout << "    Invalid Operation: " << bits[0] << std::endl;
+    std::cout << "    Denormal Operand:  " << bits[1] << std::endl;
+    std::cout << "    Divide by Zero:    " << bits[2] << std::endl;
+    std::cout << "    Overflow:          " << bits[3] << std::endl;
+    std::cout << "    Underflow:         " << bits[4] << std::endl;
+    std::cout << "    Precision:         " << bits[5] << std::endl;
+
+    // Precision Control
+    std::cout << "  Precision Control:   ";
+    switch ((fpcr >> 8) & 0x3) {
+        case 0: std::cout << "Single (24 bits)"; break;
+        case 1: std::cout << "Reserved"; break;
+        case 2: std::cout << "Double (53 bits)"; break;
+        case 3: std::cout << "Extended (64 bits)"; break;
+    }
+    std::cout << std::endl;
+
+    // Rounding Control
+    std::cout << "  Rounding Control:    ";
+    switch ((fpcr >> 10) & 0x3) {
+        case 0: std::cout << "Round to nearest (even)"; break;
+        case 1: std::cout << "Round down (toward -∞)"; break;
+        case 2: std::cout << "Round up (toward +∞)"; break;
+        case 3: std::cout << "Round toward zero (truncate)"; break;
+    }
+    std::cout << std::endl;
+
+    // Infinity Control (legacy)
+    std::cout << "  Infinity Control:    " << (bits[12] ? "Projective" : "Affine") << " (legacy)" << std::endl;
 }
 
 #if defined(_MSC_VER)
@@ -64,7 +100,45 @@ uint32_t getMXCSR() {
 }
 
 void logMXCSR(const std::string& location) {
-    std::cout << "MXCSR at " << location << ": 0x" << std::hex << getMXCSR() << std::dec << std::endl;
+    uint32_t mxcsr = getMXCSR();
+    std::cout << "MXCSR at " << location << ": 0x" << std::hex << std::setw(8) << std::setfill('0') << mxcsr << std::dec << std::endl;
+    
+    // Create a bitset for easy bit access
+    std::bitset<32> bits(mxcsr);
+
+    // Exception Flags (1 = exception has occurred)
+    std::cout << "  Exception Flags:" << std::endl;
+    std::cout << "    Invalid Operation: " << bits[0] << std::endl;
+    std::cout << "    Denormal:          " << bits[1] << std::endl;
+    std::cout << "    Divide by Zero:    " << bits[2] << std::endl;
+    std::cout << "    Overflow:          " << bits[3] << std::endl;
+    std::cout << "    Underflow:         " << bits[4] << std::endl;
+    std::cout << "    Precision:         " << bits[5] << std::endl;
+
+    // Exception Masks (1 = exception is masked)
+    std::cout << "  Exception Masks:" << std::endl;
+    std::cout << "    Invalid Operation: " << bits[7] << std::endl;
+    std::cout << "    Denormal:          " << bits[8] << std::endl;
+    std::cout << "    Divide by Zero:    " << bits[9] << std::endl;
+    std::cout << "    Overflow:          " << bits[10] << std::endl;
+    std::cout << "    Underflow:         " << bits[11] << std::endl;
+    std::cout << "    Precision:         " << bits[12] << std::endl;
+
+    // Rounding Control
+    std::cout << "  Rounding Control:    ";
+    switch ((mxcsr >> 13) & 0x3) {
+        case 0: std::cout << "Round to nearest (even)"; break;
+        case 1: std::cout << "Round down (toward -∞)"; break;
+        case 2: std::cout << "Round up (toward +∞)"; break;
+        case 3: std::cout << "Round toward zero (truncate)"; break;
+    }
+    std::cout << std::endl;
+
+    // Flush to Zero
+    std::cout << "  Flush to Zero:       " << bits[15] << std::endl;
+
+    // Denormals Are Zeros
+    std::cout << "  Denormals Are Zeros: " << bits[6] << std::endl;
 }
 
 template<class FloatType>
