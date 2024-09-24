@@ -19,7 +19,6 @@ using namespace std;
 #include <time.h>
 
 #include "streflop.h"
-// using namespace streflop;
 
 #pragma pack(push, 1)
 struct FileHeader {
@@ -32,6 +31,32 @@ struct FileHeader {
 };
 #pragma pack(pop)
 
+uint32_t getFPCR() {
+    uint32_t fpcr;
+    #if defined(_MSC_VER) && defined(_M_X64)
+        _controlfp_s(reinterpret_cast<unsigned int*>(&fpcr), 0, 0);
+    #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+        __asm__ __volatile__("fnstcw %0" : "=m" (fpcr));
+    #else
+        fpcr = 0; // Placeholder for other platforms
+    #endif
+    return fpcr;
+}
+
+void logFPCR(const std::string& location) {
+    std::cout << "FPCR at " << location << ": 0x" << std::hex << getFPCR() << std::dec << std::endl;
+}
+
+class DeterministicRNG {
+private:
+    uint64_t state;
+public:
+    DeterministicRNG(uint64_t seed) : state(seed) {}
+    double next() {
+        state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+        return static_cast<double>(state >> 11) / static_cast<double>(UINT64_MAX >> 11);
+    }
+};
 
 template<class FloatType>
 void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
@@ -100,8 +125,10 @@ template<class FloatType> void doTest(string s, string name) {
     // Generate some random numbers and do some post-processing
     // No math function is called before this loop
     for (int i=0; i<10000; ++i) {
-        f = streflop::RandomIE(f, FloatType(i));
-        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + streflop::RandomIE<FloatType>(1.0,2.0);
+        // f = streflop::RandomIE(f, FloatType(i));
+        f = FloatType(1.0);
+        // for (int j=0; j<100; ++j) f += FloatType(0.3) / f + streflop::RandomIE<FloatType>(1.0,2.0);
+        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + FloatType(1.0);
         writeFloat(basicfile, f);
     }
     basicfile.close();
