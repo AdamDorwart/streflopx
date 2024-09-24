@@ -332,6 +332,10 @@ template<> inline void streflop_init<Double>() {
     fpu_mode &= 0xFCFF;
     fpu_mode |= 0x0200; // 64 bits internal operations
     STREFLOP_FLDCW(fpu_mode);
+#if defined(_MSC_VER) 
+     unsigned int current = _controlfp(0, 0);
+     _controlfp(_PC_53, _MCW_PC); // Set to double precision
+#endif
 }
 
 #ifdef Extended
