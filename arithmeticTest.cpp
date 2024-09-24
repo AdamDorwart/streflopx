@@ -126,9 +126,8 @@ template<class FloatType> void doTest(string s, string name) {
     // No math function is called before this loop
     for (int i=0; i<10000; ++i) {
         // f = streflop::RandomIE(f, FloatType(i));
-        streflop::streflop_init<FloatType>();
-        f = f + FloatType(0.5);
-        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + FloatType(0.1);
+        f = f + FloatType(1.0);
+        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + FloatType(1.0);
         writeFloat(basicfile, f);
     }
     basicfile.close();
