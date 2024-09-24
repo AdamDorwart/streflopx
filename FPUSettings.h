@@ -82,6 +82,7 @@
 #endif
 
 #if defined(_MSC_VER)
+#include <float.h>
 #ifndef _M_IX86
 extern "C" {
     short __streflop_fstcw();
@@ -479,6 +480,10 @@ template<> inline void streflop_init<Double>() {
     sse_mode &= 0xFFFF7FBF; // clear DAZ and FTZ
 #endif
     STREFLOP_LDMXCSR(sse_mode);
+#if defined(_MSC_VER) 
+     unsigned int current = _controlfp(0, 0);
+     _controlfp(_PC_53, _MCW_PC); // Set to double precision
+#endif
 }
 
 #ifdef Extended
