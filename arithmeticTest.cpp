@@ -43,8 +43,7 @@ uint32_t getFPCR() {
     return fpcr;
 }
 
-void logFPCR(const std::string& location) {
-    uint32_t fpcr = getFPCR();
+void logFPCR(const uint32_t fpcr, const std::string& location) {
     std::cout << "FPCR at " << location << ": 0x" << std::hex << std::setw(4) << std::setfill('0') << fpcr << std::dec << std::endl;
     
     // Create a bitset for easy bit access
@@ -99,8 +98,7 @@ uint32_t getMXCSR() {
     return mxcsr;
 }
 
-void logMXCSR(const std::string& location) {
-    uint32_t mxcsr = getMXCSR();
+void logMXCSR(const uint32_t mxcsr, const std::string& location) {
     std::cout << "MXCSR at " << location << ": 0x" << std::hex << std::setw(8) << std::setfill('0') << mxcsr << std::dec << std::endl;
     
     // Create a bitset for easy bit access
@@ -203,8 +201,8 @@ template<class FloatType> void doTest(string s, string name) {
 
     uint32_t lastFPCR = getFPCR();
     uint32_t lastMXCSR = getMXCSR();
-    std::cout << "Initial FPCR: 0x" << std::hex << lastFPCR << std::dec << std::endl;
-    std::cout << "Initial MXCSR: 0x" << std::hex << lastMXCSR << std::dec << std::endl;
+    logFPCR(lastFPCR, "Initial");
+    logMXCSR(lastMXCSR, "Initial");
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
     fesetround(streflop::FE_TONEAREST);
@@ -212,48 +210,54 @@ template<class FloatType> void doTest(string s, string name) {
     writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
     // No math function is called before this loop
-    for (int i=0; i<10000; ++i) {
-        // f = streflop::RandomIE(f, FloatType(i));
+    for (int i = 0; i < 10000; ++i) {
         f = f + FloatType(1.0);
+
         uint32_t currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
-            std::cout << "FPCR changed at iteration " << i << " (before inner loop). New value: 0x" 
-                    << std::hex << currentFPCR << std::dec << std::endl;
+            std::cout << "FPCR changed at iteration " << i << " (before inner loop):" << std::endl;
+            logFPCR(currentFPCR, "Before inner loop");
             lastFPCR = currentFPCR;
         }
+
         uint32_t currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
-            std::cout << "MXCSR changed at iteration " << i << " (before inner loop). New value: 0x" 
-                    << std::hex << currentMXCSR << std::dec << std::endl;
+            std::cout << "MXCSR changed at iteration " << i << " (before inner loop):" << std::endl;
+            logMXCSR(currentMXCSR,"Before inner loop");
             lastMXCSR = currentMXCSR;
         }
-        for (int j=0; j<100; ++j) {
+
+        for (int j = 0; j < 100; ++j) {
             f += FloatType(0.3) / f + FloatType(1.0);
             
-            uint32_t currentFPCR = getFPCR();
+            currentFPCR = getFPCR();
             if (currentFPCR != lastFPCR) {
-                std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j 
-                        << ". New value: 0x" << std::hex << currentFPCR << std::dec << std::endl;
+                std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
+                logFPCR(currentFPCR, "During inner loop");
                 lastFPCR = currentFPCR;
             }
-            uint32_t currentMXCSR = getMXCSR();
+
+            currentMXCSR = getMXCSR();
             if (currentMXCSR != lastMXCSR) {
-                std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j 
-                        << ". New value: 0x" << std::hex << currentMXCSR << std::dec << std::endl;
+                std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
+                logMXCSR(currentMXCSR,"During inner loop");
                 lastMXCSR = currentMXCSR;
             }
         }
+
         writeFloat(basicfile, f);
+
         currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
-            std::cout << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
-                    << std::hex << currentFPCR << std::dec << std::endl;
+            std::cout << "FPCR changed at iteration " << i << " (after inner loop):" << std::endl;
+            logFPCR(currentFPCR,"After inner loop");
             lastFPCR = currentFPCR;
         }
+
         currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
-            std::cout << "MXCSR changed at iteration " << i << " (after inner loop). New value: 0x" 
-                    << std::hex << currentMXCSR << std::dec << std::endl;
+            std::cout << "MXCSR changed at iteration " << i << " (after inner loop):" << std::endl;
+            logMXCSR(currentMXCSR,"After inner loop");
             lastMXCSR = currentMXCSR;
         }
     }
