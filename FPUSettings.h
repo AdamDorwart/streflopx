@@ -243,8 +243,8 @@ enum FPU_RoundMode {
 #if defined(STREFLOP_X87)
 
 /// Raise exception for these flags
-inline int32_t feraiseexcept(FPU_Exceptions excepts) {
-    uint16_t fpu_mode;
+inline int feraiseexcept(FPU_Exceptions excepts) {
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= ~( excepts ); // generate error for selection
     STREFLOP_FLDCW(fpu_mode);
@@ -252,8 +252,8 @@ inline int32_t feraiseexcept(FPU_Exceptions excepts) {
 }
 
 /// Clear exceptions for these flags
-inline int32_t feclearexcept(int32_t excepts) {
-    uint16_t fpu_mode;
+inline int feclearexcept(int excepts) {
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode |= excepts;
     STREFLOP_FLDCW(fpu_mode);
@@ -261,15 +261,15 @@ inline int32_t feclearexcept(int32_t excepts) {
 }
 
 /// Get current rounding mode
-inline int32_t fegetround() {
-    uint16_t fpu_mode;
+inline int fegetround() {
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     return fpu_mode & 0x0C00;
 }
 
 /// Set a new rounding mode
-inline int32_t fesetround(FPU_RoundMode roundMode) {
-    uint16_t fpu_mode;
+inline int fesetround(FPU_RoundMode roundMode) {
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xF3FF; // clear current mode
     fpu_mode |= roundMode; // sets new mode
@@ -277,13 +277,13 @@ inline int32_t fesetround(FPU_RoundMode roundMode) {
     return 0;
 }
 
-typedef int16_t fenv_t;
+typedef short int fenv_t;
 
 /// Default env. Defined in Math.cpp to be 0, and initalized on first use to the permanent holder
 extern fenv_t FE_DFL_ENV;
 
 /// Get FP env into the given structure
-inline int32_t fegetenv(fenv_t *envp) {
+inline int fegetenv(fenv_t *envp) {
     // check that default env exists, otherwise save it now
     if (!FE_DFL_ENV) STREFLOP_FSTCW(FE_DFL_ENV);
     // Now store env into argument
@@ -292,7 +292,7 @@ inline int32_t fegetenv(fenv_t *envp) {
 }
 
 /// Sets FP env from the given structure
-inline int32_t fesetenv(const fenv_t *envp) {
+inline int fesetenv(const fenv_t *envp) {
     // check that default env exists, otherwise save it now
     if (!FE_DFL_ENV) STREFLOP_FSTCW(FE_DFL_ENV);
     // Now overwrite current env by argument
@@ -301,7 +301,7 @@ inline int32_t fesetenv(const fenv_t *envp) {
 }
 
 /// get env and clear exceptions
-inline int32_t feholdexcept(fenv_t *envp) {
+inline int feholdexcept(fenv_t *envp) {
     fegetenv(envp);
     feclearexcept(FE_ALL_EXCEPT);
     return 0;
@@ -319,14 +319,14 @@ template<typename T> inline void streflop_init() {
 /// this may also be called to switch between code sections using
 /// different precisions
 template<> inline void streflop_init<Simple>() {
-    uint16_t fpu_mode;
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xFCFF; // 32 bits internal operations
     STREFLOP_FLDCW(fpu_mode);
 }
 
 template<> inline void streflop_init<Double>() {
-    uint16_t fpu_mode;
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xFCFF;
     fpu_mode |= 0x0200; // 64 bits internal operations
@@ -335,7 +335,7 @@ template<> inline void streflop_init<Double>() {
 
 #ifdef Extended
 template<> inline void streflop_init<Extended>() {
-    uint16_t fpu_mode;
+    unsigned short fpu_mode;
     STREFLOP_FSTCW(fpu_mode);
     fpu_mode &= 0xFCFF;
     fpu_mode |= 0x0300; // 80 bits internal operations
@@ -346,14 +346,14 @@ template<> inline void streflop_init<Extended>() {
 #elif defined(STREFLOP_SSE)
 
 /// Raise exception for these flags
-inline int32_t feraiseexcept(FPU_Exceptions excepts) {
+inline int feraiseexcept(FPU_Exceptions excepts) {
     // Just in case the compiler would store a value on the st(x) registers
-    uint16_t x87_mode;
+    unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
     x87_mode &= ~( excepts ); // generate error for selection
     STREFLOP_FLDCW(x87_mode);
 
-    int32_t sse_mode;
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
     sse_mode &= ~( excepts << 7 ); // generate error for selection
     STREFLOP_LDMXCSR(sse_mode);
@@ -362,14 +362,14 @@ inline int32_t feraiseexcept(FPU_Exceptions excepts) {
 }
 
 /// Clear exceptions for these flags
-inline int32_t feclearexcept(int32_t excepts) {
+inline int feclearexcept(int excepts) {
     // Just in case the compiler would store a value on the st(x) registers
-    uint16_t x87_mode;
+    unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
     x87_mode |= excepts;
     STREFLOP_FLDCW(x87_mode);
 
-    int32_t sse_mode;
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
     sse_mode |= excepts << 7;
     STREFLOP_LDMXCSR(sse_mode);
@@ -378,15 +378,15 @@ inline int32_t feclearexcept(int32_t excepts) {
 }
 
 /// Get current rounding mode
-inline int32_t fegetround() {
-    int32_t sse_mode;
+inline int fegetround() {
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
     return (sse_mode>>3) & 0x00000C00;
 }
 
 /// Set a new rounding mode
-inline int32_t fesetround(FPU_RoundMode roundMode) {
-    int32_t sse_mode;
+inline int fesetround(FPU_RoundMode roundMode) {
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
     sse_mode &= 0xFFFF9FFF; // clear current mode
     sse_mode |= roundMode<<3; // sets new mode
@@ -396,15 +396,15 @@ inline int32_t fesetround(FPU_RoundMode roundMode) {
 
 /// stores both x87 and SSE words
 struct fenv_t {
-    int32_t sse_mode;
-    int16_t x87_mode;
+    int sse_mode;
+    short int x87_mode;
 };
 
 /// Default env. Defined in Math.cpp, structs are initialized to 0
 extern fenv_t FE_DFL_ENV;
 
 /// Get FP env into the given structure
-inline int32_t fegetenv(fenv_t *envp) {
+inline int fegetenv(fenv_t *envp) {
     // check that default env exists, otherwise save it now
     if (!FE_DFL_ENV.x87_mode) STREFLOP_FSTCW(FE_DFL_ENV.x87_mode);
     // Now store env into argument
@@ -418,7 +418,7 @@ inline int32_t fegetenv(fenv_t *envp) {
 }
 
 /// Sets FP env from the given structure
-inline int32_t fesetenv(const fenv_t *envp) {
+inline int fesetenv(const fenv_t *envp) {
     // check that default env exists, otherwise save it now
     if (!FE_DFL_ENV.x87_mode) STREFLOP_FSTCW(FE_DFL_ENV.x87_mode);
     // Now overwrite current env by argument
@@ -432,7 +432,7 @@ inline int32_t fesetenv(const fenv_t *envp) {
 }
 
 /// get env and clear exceptions
-inline int32_t feholdexcept(fenv_t *envp) {
+inline int feholdexcept(fenv_t *envp) {
     fegetenv(envp);
     feclearexcept(FE_ALL_EXCEPT);
     return 0;
@@ -448,12 +448,12 @@ template<typename T> inline void streflop_init() {
 /// different precisions
 template<> inline void streflop_init<Simple>() {
     // Just in case the compiler would store a value on the st(x) registers
-    uint16_t x87_mode;
+    unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
     x87_mode &= 0xFCFF; // 32 bits internal operations
     STREFLOP_FLDCW(x87_mode);
 
-    int32_t sse_mode;
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
 #if defined(STREFLOP_NO_DENORMALS)
     sse_mode |= 0x8040; // set DAZ and FTZ
@@ -465,13 +465,13 @@ template<> inline void streflop_init<Simple>() {
 
 template<> inline void streflop_init<Double>() {
     // Just in case the compiler would store a value on the st(x) registers
-    uint16_t x87_mode;
+    unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
     x87_mode &= 0xFCFF;
     x87_mode |= 0x0200; // 64 bits internal operations
     STREFLOP_FLDCW(x87_mode);
 
-    int32_t sse_mode;
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
 #if defined(STREFLOP_NO_DENORMALS)
     sse_mode |= 0x8040; // set DAZ and FTZ
@@ -484,13 +484,13 @@ template<> inline void streflop_init<Double>() {
 #ifdef Extended
 template<> inline void streflop_init<Extended>() {
     // Just in case the compiler would store a value on the st(x) registers
-    uint16_t x87_mode;
+    unsigned short x87_mode;
     STREFLOP_FSTCW(x87_mode);
     x87_mode &= 0xFCFF;
     x87_mode |= 0x0300; // 80 bits internal operations
     STREFLOP_FLDCW(x87_mode);
 
-    int32_t sse_mode;
+    int sse_mode;
     STREFLOP_STMXCSR(sse_mode);
 #if defined(STREFLOP_NO_DENORMALS)
     sse_mode |= 0x8040; // set DAZ and FTZ
