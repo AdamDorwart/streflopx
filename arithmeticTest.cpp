@@ -35,14 +35,14 @@ struct FileHeader {
 };
 #pragma pack(pop)
 
-std::string format_hex(uint32_t value) {
+std::string format_hex(uint16_t value) {
     std::stringstream ss;
     ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << value;
     return ss.str();
 }
 
-uint32_t getFPCR() {
-    uint32_t fpcr;
+uint16_t getFPCR() {
+    uint16_t fpcr;
     #if defined(_MSC_VER) && defined(_M_X64)
         _controlfp_s(reinterpret_cast<unsigned int*>(&fpcr), 0, 0);
     #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
@@ -57,8 +57,8 @@ uint32_t getFPCR() {
     #include <intrin.h>
 #endif
 
-uint32_t getMXCSR() {
-    uint32_t mxcsr;
+uint16_t getMXCSR() {
+    uint16_t mxcsr;
     #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
         mxcsr = _mm_getcsr();
     #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
@@ -69,13 +69,7 @@ uint32_t getMXCSR() {
     return mxcsr;
 }
 
-std::string uint32_to_hex(uint32_t value) {
-    std::stringstream ss;
-    ss << "0x" << std::hex << std::setw(8) << std::setfill('0') << value;
-    return ss.str();
-}
-
-void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::string& location) {
+void logFPCR(const uint16_t prev_fpcr, const uint16_t curr_fpcr, const std::string& location) {
     std::cout << "FPCR comparison at " << location << ":" << std::endl;
     std::cout << std::setw(30) << std::left << "Setting" << " | " << std::setw(20) << "Previous" << " | " << std::setw(20) << "Current" << std::endl;
     std::cout << std::string(75, '-') << std::endl;
@@ -95,7 +89,7 @@ void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::stri
     }
 
     // Precision Control
-    auto get_precision = [](uint32_t fpcr) {
+    auto get_precision = [](uint16_t fpcr) {
         switch ((fpcr >> 8) & 0x3) {
             case 0: return "Single (24 bits)";
             case 1: return "Reserved";
@@ -107,7 +101,7 @@ void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::stri
     print_row("Precision Control", get_precision(prev_fpcr), get_precision(curr_fpcr));
 
     // Rounding Control
-    auto get_rounding = [](uint32_t fpcr) {
+    auto get_rounding = [](uint16_t fpcr) {
         switch ((fpcr >> 10) & 0x3) {
             case 0: return "Round to nearest (even)";
             case 1: return "Round down (toward -∞)";
@@ -122,7 +116,7 @@ void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::stri
     print_row("Infinity Control", prev_bits[12] ? "Projective" : "Affine", curr_bits[12] ? "Projective" : "Affine");
 }
 
-void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::string& location) {
+void logMXCSR(const uint16_t prev_mxcsr, const uint16_t curr_mxcsr, const std::string& location) {
     std::cout << "MXCSR comparison at " << location << ":" << std::endl;
     std::cout << std::setw(30) << std::left << "Setting" << " | " << std::setw(20) << "Previous" << " | " << std::setw(20) << "Current" << std::endl;
     std::cout << std::string(75, '-') << std::endl;
@@ -147,7 +141,7 @@ void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::s
     }
 
     // Rounding Control
-    auto get_rounding = [](uint32_t mxcsr) {
+    auto get_rounding = [](uint16_t mxcsr) {
         switch ((mxcsr >> 13) & 0x3) {
             case 0: return "Round to nearest (even)";
             case 1: return "Round down (toward -∞)";
@@ -166,7 +160,7 @@ void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::s
 }
 
 template<class FloatType>
-void writeFileHeader(ofstream& of, uint32_t elementCount, uint32_t extraFlags) {
+void writeFileHeader(ofstream& of, uint16_t elementCount, uint16_t extraFlags) {
     FileHeader header;
     memcpy(header.magic, "SREF", 4);  // SREF for STandalone REproducible FLOating-Point
     header.version = 1;
@@ -225,8 +219,8 @@ template<class FloatType> void doTest(string s, string name) {
     
     FloatType f = 42;
 
-    uint32_t lastFPCR = getFPCR();
-    uint32_t lastMXCSR = getMXCSR();
+    uint16_t lastFPCR = getFPCR();
+    uint16_t lastMXCSR = getMXCSR();
     logFPCR(lastFPCR, lastFPCR, "Initial");
     logMXCSR(lastMXCSR, lastMXCSR, "Initial");
     // Trap NaNs
@@ -239,14 +233,14 @@ template<class FloatType> void doTest(string s, string name) {
     for (int i = 0; i < 10000; ++i) {
         f = f + FloatType(1.0);
 
-        uint32_t currentFPCR = getFPCR();
+        uint16_t currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
             std::cout << "FPCR changed at iteration " << i << " (before inner loop):" << std::endl;
             logFPCR(lastFPCR, currentFPCR, "Before inner loop");
             lastFPCR = currentFPCR;
         }
 
-        uint32_t currentMXCSR = getMXCSR();
+        uint16_t currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
             std::cout << "MXCSR changed at iteration " << i << " (before inner loop):" << std::endl;
             logMXCSR(lastMXCSR,currentMXCSR,"Before inner loop");
