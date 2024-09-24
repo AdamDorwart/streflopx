@@ -116,7 +116,6 @@ template<class FloatType> void doTest(string s, string name) {
         exit(4);
     }
     
-    DeterministicRNG rng(42); // Initialize with a seed
     FloatType f = 42;
 
     // Trap NaNs
@@ -125,16 +124,10 @@ template<class FloatType> void doTest(string s, string name) {
     writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
     // No math function is called before this loop
-    for (int i = 0; i < 10000; ++i) {
-        // Simulate RandomIE(f, FloatType(i))
-        FloatType range = FloatType(i) - f;
-        f = f + FloatType(0.5) * range;
-
-        for (int j = 0; j < 100; ++j) {
-            // Simulate RandomIE<FloatType>(1.0, 2.0)
-            FloatType randomValue = FloatType(1.0);
-            f += FloatType(0.3) / f + randomValue;
-        }
+    for (int i=0; i<10000; ++i) {
+        // f = streflop::RandomIE(f, FloatType(i));
+        f = f + FloatType(0.5);
+        for (int j=0; j<100; ++j) f += FloatType(0.3) / f + FloatType(0.1);
         writeFloat(basicfile, f);
     }
     basicfile.close();
