@@ -223,9 +223,9 @@ template<class FloatType> void doTest(string s, string name) {
     uint16_t lastMXCSR = getMXCSR();
     logFPCR(lastFPCR, lastFPCR, "Initial");
     logMXCSR(lastMXCSR, lastMXCSR, "Initial");
+    feclearexcept(streflop::FE_ALL_EXCEPT);
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
-    fesetround(streflop::FE_TONEAREST);
 
     writeFileHeader<FloatType>(basicfile, 10000, 0);  // 0 for basic operations
     // Generate some random numbers and do some post-processing
