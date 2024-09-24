@@ -14,6 +14,9 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <cstdint>
+#include <bitset>
+#include <iomanip>
 using namespace std;
 // clock
 #include <time.h>
@@ -43,45 +46,6 @@ uint32_t getFPCR() {
     return fpcr;
 }
 
-void logFPCR(const uint32_t fpcr, const std::string& location) {
-    std::cout << "FPCR at " << location << ": 0x" << std::hex << std::setw(4) << std::setfill('0') << fpcr << std::dec << std::endl;
-    
-    // Create a bitset for easy bit access
-    std::bitset<16> bits(fpcr);
-
-    // Exception Masks (1 = exception is masked)
-    std::cout << "  Exception Masks:" << std::endl;
-    std::cout << "    Invalid Operation: " << bits[0] << std::endl;
-    std::cout << "    Denormal Operand:  " << bits[1] << std::endl;
-    std::cout << "    Divide by Zero:    " << bits[2] << std::endl;
-    std::cout << "    Overflow:          " << bits[3] << std::endl;
-    std::cout << "    Underflow:         " << bits[4] << std::endl;
-    std::cout << "    Precision:         " << bits[5] << std::endl;
-
-    // Precision Control
-    std::cout << "  Precision Control:   ";
-    switch ((fpcr >> 8) & 0x3) {
-        case 0: std::cout << "Single (24 bits)"; break;
-        case 1: std::cout << "Reserved"; break;
-        case 2: std::cout << "Double (53 bits)"; break;
-        case 3: std::cout << "Extended (64 bits)"; break;
-    }
-    std::cout << std::endl;
-
-    // Rounding Control
-    std::cout << "  Rounding Control:    ";
-    switch ((fpcr >> 10) & 0x3) {
-        case 0: std::cout << "Round to nearest (even)"; break;
-        case 1: std::cout << "Round down (toward -∞)"; break;
-        case 2: std::cout << "Round up (toward +∞)"; break;
-        case 3: std::cout << "Round toward zero (truncate)"; break;
-    }
-    std::cout << std::endl;
-
-    // Infinity Control (legacy)
-    std::cout << "  Infinity Control:    " << (bits[12] ? "Projective" : "Affine") << " (legacy)" << std::endl;
-}
-
 #if defined(_MSC_VER)
     #include <intrin.h>
 #endif
@@ -98,45 +62,94 @@ uint32_t getMXCSR() {
     return mxcsr;
 }
 
-void logMXCSR(const uint32_t mxcsr, const std::string& location) {
-    std::cout << "MXCSR at " << location << ": 0x" << std::hex << std::setw(8) << std::setfill('0') << mxcsr << std::dec << std::endl;
-    
-    // Create a bitset for easy bit access
-    std::bitset<32> bits(mxcsr);
+void logFPCR(const uint32_t prev_fpcr, const uint32_t curr_fpcr, const std::string& location) {
+    std::cout << "FPCR comparison at " << location << ":" << std::endl;
+    std::cout << std::setw(30) << std::left << "Setting" << " | " << std::setw(20) << "Previous" << " | " << std::setw(20) << "Current" << std::endl;
+    std::cout << std::string(75, '-') << std::endl;
 
-    // Exception Flags (1 = exception has occurred)
-    std::cout << "  Exception Flags:" << std::endl;
-    std::cout << "    Invalid Operation: " << bits[0] << std::endl;
-    std::cout << "    Denormal:          " << bits[1] << std::endl;
-    std::cout << "    Divide by Zero:    " << bits[2] << std::endl;
-    std::cout << "    Overflow:          " << bits[3] << std::endl;
-    std::cout << "    Underflow:         " << bits[4] << std::endl;
-    std::cout << "    Precision:         " << bits[5] << std::endl;
+    auto print_row = [](const std::string& name, const std::string& prev, const std::string& curr) {
+        std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
+    };
 
-    // Exception Masks (1 = exception is masked)
-    std::cout << "  Exception Masks:" << std::endl;
-    std::cout << "    Invalid Operation: " << bits[7] << std::endl;
-    std::cout << "    Denormal:          " << bits[8] << std::endl;
-    std::cout << "    Divide by Zero:    " << bits[9] << std::endl;
-    std::cout << "    Overflow:          " << bits[10] << std::endl;
-    std::cout << "    Underflow:         " << bits[11] << std::endl;
-    std::cout << "    Precision:         " << bits[12] << std::endl;
+    print_row("Raw Value", "0x" + std::to_string(prev_fpcr), "0x" + std::to_string(curr_fpcr));
+
+    std::bitset<16> prev_bits(prev_fpcr), curr_bits(curr_fpcr);
+
+    // Exception Masks
+    std::vector<std::string> exceptions = {"Invalid Operation", "Denormal Operand", "Divide by Zero", "Overflow", "Underflow", "Precision"};
+    for (int i = 0; i < 6; ++i) {
+        print_row("Exception Mask: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
+    }
+
+    // Precision Control
+    auto get_precision = [](uint32_t fpcr) {
+        switch ((fpcr >> 8) & 0x3) {
+            case 0: return "Single (24 bits)";
+            case 1: return "Reserved";
+            case 2: return "Double (53 bits)";
+            case 3: return "Extended (64 bits)";
+            default: return "Unknown";
+        }
+    };
+    print_row("Precision Control", get_precision(prev_fpcr), get_precision(curr_fpcr));
 
     // Rounding Control
-    std::cout << "  Rounding Control:    ";
-    switch ((mxcsr >> 13) & 0x3) {
-        case 0: std::cout << "Round to nearest (even)"; break;
-        case 1: std::cout << "Round down (toward -∞)"; break;
-        case 2: std::cout << "Round up (toward +∞)"; break;
-        case 3: std::cout << "Round toward zero (truncate)"; break;
+    auto get_rounding = [](uint32_t fpcr) {
+        switch ((fpcr >> 10) & 0x3) {
+            case 0: return "Round to nearest (even)";
+            case 1: return "Round down (toward -∞)";
+            case 2: return "Round up (toward +∞)";
+            case 3: return "Round toward zero (truncate)";
+            default: return "Unknown";
+        }
+    };
+    print_row("Rounding Control", get_rounding(prev_fpcr), get_rounding(curr_fpcr));
+
+    // Infinity Control
+    print_row("Infinity Control", prev_bits[12] ? "Projective" : "Affine", curr_bits[12] ? "Projective" : "Affine");
+}
+
+void logMXCSR(const uint32_t prev_mxcsr, const uint32_t curr_mxcsr, const std::string& location) {
+    std::cout << "MXCSR comparison at " << location << ":" << std::endl;
+    std::cout << std::setw(30) << std::left << "Setting" << " | " << std::setw(20) << "Previous" << " | " << std::setw(20) << "Current" << std::endl;
+    std::cout << std::string(75, '-') << std::endl;
+
+    auto print_row = [](const std::string& name, const std::string& prev, const std::string& curr) {
+        std::cout << std::setw(30) << std::left << name << " | " << std::setw(20) << prev << " | " << std::setw(20) << curr << std::endl;
+    };
+
+    print_row("Raw Value", "0x" + std::to_string(prev_mxcsr), "0x" + std::to_string(curr_mxcsr));
+
+    std::bitset<32> prev_bits(prev_mxcsr), curr_bits(curr_mxcsr);
+
+    // Exception Flags
+    std::vector<std::string> exceptions = {"Invalid Operation", "Denormal", "Divide by Zero", "Overflow", "Underflow", "Precision"};
+    for (int i = 0; i < 6; ++i) {
+        print_row("Exception Flag: " + exceptions[i], std::to_string(prev_bits[i]), std::to_string(curr_bits[i]));
     }
-    std::cout << std::endl;
+
+    // Exception Masks
+    for (int i = 0; i < 6; ++i) {
+        print_row("Exception Mask: " + exceptions[i], std::to_string(prev_bits[i+7]), std::to_string(curr_bits[i+7]));
+    }
+
+    // Rounding Control
+    auto get_rounding = [](uint32_t mxcsr) {
+        switch ((mxcsr >> 13) & 0x3) {
+            case 0: return "Round to nearest (even)";
+            case 1: return "Round down (toward -∞)";
+            case 2: return "Round up (toward +∞)";
+            case 3: return "Round toward zero (truncate)";
+            default: return "Unknown";
+        }
+    };
+    print_row("Rounding Control", get_rounding(prev_mxcsr), get_rounding(curr_mxcsr));
 
     // Flush to Zero
-    std::cout << "  Flush to Zero:       " << bits[15] << std::endl;
+    print_row("Flush to Zero", std::to_string(prev_bits[15]), std::to_string(curr_bits[15]));
 
     // Denormals Are Zeros
-    std::cout << "  Denormals Are Zeros: " << bits[6] << std::endl;
+    print_row("Denormals Are Zeros", std::to_string(prev_bits[6]), std::to_string(curr_bits[6]));
 }
 
 template<class FloatType>
@@ -201,8 +214,8 @@ template<class FloatType> void doTest(string s, string name) {
 
     uint32_t lastFPCR = getFPCR();
     uint32_t lastMXCSR = getMXCSR();
-    logFPCR(lastFPCR, "Initial");
-    logMXCSR(lastMXCSR, "Initial");
+    logFPCR(lastFPCR, lastFPCR, "Initial");
+    logMXCSR(lastMXCSR, lastMXCSR, "Initial");
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
     fesetround(streflop::FE_TONEAREST);
@@ -216,14 +229,14 @@ template<class FloatType> void doTest(string s, string name) {
         uint32_t currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
             std::cout << "FPCR changed at iteration " << i << " (before inner loop):" << std::endl;
-            logFPCR(currentFPCR, "Before inner loop");
+            logFPCR(lastFPCR, currentFPCR, "Before inner loop");
             lastFPCR = currentFPCR;
         }
 
         uint32_t currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
             std::cout << "MXCSR changed at iteration " << i << " (before inner loop):" << std::endl;
-            logMXCSR(currentMXCSR,"Before inner loop");
+            logMXCSR(lastMXCSR,currentMXCSR,"Before inner loop");
             lastMXCSR = currentMXCSR;
         }
 
@@ -233,14 +246,14 @@ template<class FloatType> void doTest(string s, string name) {
             currentFPCR = getFPCR();
             if (currentFPCR != lastFPCR) {
                 std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
-                logFPCR(currentFPCR, "During inner loop");
+                logFPCR(lastFPCR,currentFPCR, "During inner loop");
                 lastFPCR = currentFPCR;
             }
 
             currentMXCSR = getMXCSR();
             if (currentMXCSR != lastMXCSR) {
                 std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
-                logMXCSR(currentMXCSR,"During inner loop");
+                logMXCSR(lastMXCSR,currentMXCSR,"During inner loop");
                 lastMXCSR = currentMXCSR;
             }
         }
@@ -250,14 +263,14 @@ template<class FloatType> void doTest(string s, string name) {
         currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
             std::cout << "FPCR changed at iteration " << i << " (after inner loop):" << std::endl;
-            logFPCR(currentFPCR,"After inner loop");
+            logFPCR(lastFPCR,currentFPCR,"After inner loop");
             lastFPCR = currentFPCR;
         }
 
         currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
             std::cout << "MXCSR changed at iteration " << i << " (after inner loop):" << std::endl;
-            logMXCSR(currentMXCSR,"After inner loop");
+            logMXCSR(lastMXCSR,currentMXCSR,"After inner loop");
             lastMXCSR = currentMXCSR;
         }
     }
