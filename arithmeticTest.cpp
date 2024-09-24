@@ -134,7 +134,7 @@ template<class FloatType> void doTest(string s, string name) {
             
             uint32_t currentFPCR = getFPCR();
             if (currentFPCR != lastFPCR) {
-                logFile << "FPCR changed at iteration " << i << ", sub-iteration " << j 
+                std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j 
                         << ". New value: 0x" << std::hex << currentFPCR << std::dec << std::endl;
                 lastFPCR = currentFPCR;
             }
@@ -142,7 +142,7 @@ template<class FloatType> void doTest(string s, string name) {
         writeFloat(basicfile, f);
         uint32_t currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
-            logFile << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
+            std::cout << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
                     << std::hex << currentFPCR << std::dec << std::endl;
             lastFPCR = currentFPCR;
         }
