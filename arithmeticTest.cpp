@@ -170,13 +170,13 @@ template<class FloatType> void doTest(string s, string name) {
             }
         }
         writeFloat(basicfile, f);
-        uint32_t currentFPCR = getFPCR();
+        currentFPCR = getFPCR();
         if (currentFPCR != lastFPCR) {
             std::cout << "FPCR changed at iteration " << i << " (after inner loop). New value: 0x" 
                     << std::hex << currentFPCR << std::dec << std::endl;
             lastFPCR = currentFPCR;
         }
-        uint32_t currentMXCSR = getMXCSR();
+        currentMXCSR = getMXCSR();
         if (currentMXCSR != lastMXCSR) {
             std::cout << "MXCSR changed at iteration " << i << " (after inner loop). New value: 0x" 
                     << std::hex << currentMXCSR << std::dec << std::endl;
