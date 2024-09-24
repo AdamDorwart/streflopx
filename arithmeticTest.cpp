@@ -37,7 +37,7 @@ struct FileHeader {
 
 std::string format_hex(uint16_t value) {
     std::stringstream ss;
-    ss << "0x" << std::setfill('0') << std::setw(8) << std::hex << value;
+    ss << "0x" << std::setfill('0') << std::setw(4) << std::hex << value;
     return ss.str();
 }
 
