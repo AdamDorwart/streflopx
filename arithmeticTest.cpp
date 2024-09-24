@@ -14,6 +14,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <format>
 #include <cstdint>
 #include <bitset>
 #include <iomanip>
