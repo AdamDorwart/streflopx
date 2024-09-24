@@ -128,11 +128,11 @@ template<class FloatType> void doTest(string s, string name) {
     for (int i = 0; i < 10000; ++i) {
         // Simulate RandomIE(f, FloatType(i))
         FloatType range = FloatType(i) - f;
-        f = f + FloatType(rng.next()) * range;
+        f = f + FloatType(0.5) * range;
 
         for (int j = 0; j < 100; ++j) {
             // Simulate RandomIE<FloatType>(1.0, 2.0)
-            FloatType randomValue = FloatType(1.0) + FloatType(rng.next());
+            FloatType randomValue = FloatType(1.0);
             f += FloatType(0.3) / f + randomValue;
         }
         writeFloat(basicfile, f);
