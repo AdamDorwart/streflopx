@@ -53,11 +53,11 @@ jobs:
             platform: windows-x64-sse-no-denormals
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: windows-latest
-            platform: windows-x64-x87
-            base_flags: -DSTREFLOP_X87=ON
-          - os: windows-latest
-            platform: windows-x64-x87-no-denormals
-            base_flags: -DSTREFLOP_x87=ON -DSTREFLOP_NO_DENORMALS=ON
+          #   platform: windows-x64-x87
+          #   base_flags: -DSTREFLOP_X87=ON
+          # - os: windows-latest
+          #   platform: windows-x64-x87-no-denormals
+          #   base_flags: -DSTREFLOP_x87=ON -DSTREFLOP_NO_DENORMALS=ON
           - os: macos-13
             platform: macos-x64-sse
             base_flags:
