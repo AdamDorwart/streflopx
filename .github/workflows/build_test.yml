@@ -110,9 +110,9 @@ jobs:
             ./arithmeticTest ../result-${{ matrix.config.platform }}
           fi
 
-      - name: Setup debug SSH
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup debug SSH
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: Upload results
         uses: actions/upload-artifact@v4
