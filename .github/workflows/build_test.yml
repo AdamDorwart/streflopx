@@ -49,10 +49,10 @@ jobs:
           - os: windows-latest
             platform: windows-x64-sse
             base_flags:
-          - os: windows-latest
-            platform: windows-x64-sse-no-denormals
-            base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          - os: windows-latest
+          # - os: windows-latest
+          #   platform: windows-x64-sse-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: windows-latest
           #   platform: windows-x64-x87
           #   base_flags: -DSTREFLOP_X87=ON
           # - os: windows-latest
