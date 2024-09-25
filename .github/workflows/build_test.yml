@@ -193,10 +193,14 @@ jobs:
         with:
           name: results-${{ matrix.platform }}
 
+      - name: List downloaded files
+        shell: pwsh
+        run: Get-ChildItem -Recurse
+
       - name: run cross-compiled arithmetic test on windows
         shell: cmd
         run: |
-          build/arithmetictest.exe result-${{ matrix.platform }}-windows
+          build\arithmeticTest.exe result-${{ matrix.platform }}-windows
 
       - name: upload windows results
         uses: actions/upload-artifact@v4
