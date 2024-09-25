@@ -34,7 +34,6 @@ jobs:
           - os: ubuntu-latest
             platform: linux-x64-x87-no-denormals
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          # Cross-compilation for Windows on Linux
           - os: ubuntu-latest
             platform: windows-x64-sse-cross
             base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake
@@ -47,19 +46,18 @@ jobs:
           - os: ubuntu-latest
             platform: windows-x64-x87-no-denormals-cross
             base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON -DSTREFLOP_NO_DENORMALS=ON
-          # Actual Windows runners (commented out for now)
-          # - os: windows-latest
-          #   platform: windows-x64-sse
-          #   base_flags:
-          # - os: windows-latest
-          #   platform: windows-x64-sse-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          # - os: windows-latest
-          #   platform: windows-x64-x87
-          #   base_flags:
-          # - os: windows-latest
-          #   platform: windows-x64-x87-no-denormals
-          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: windows-latest
+            platform: windows-x64-sse
+            base_flags:
+          - os: windows-latest
+            platform: windows-x64-sse-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: windows-latest
+            platform: windows-x64-x87
+            base_flags: -DSTREFLOP_X87=ON
+          - os: windows-latest
+            platform: windows-x64-x87-no-denormals
+            base_flags: -DSTREFLOP_x87=ON -DSTREFLOP_NO_DENORMALS=ON
           - os: macos-13
             platform: macos-x64-sse
             base_flags:
@@ -85,9 +83,6 @@ jobs:
           sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine g++-mingw-w64-x86-64-posix
           wine wineboot --init
 
-      - name: Copy MinGW-w64 runtime libraries
-        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
-        run: |
           mkdir ${{github.workspace}}/build/
           cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll ${{github.workspace}}/build/
           cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll ${{github.workspace}}/build/
