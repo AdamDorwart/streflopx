@@ -216,7 +216,7 @@ jobs:
           build\arithmeticTest.exe result-${{ matrix.platform }}-windows
 
       - name: Check if result file was created
-        if: { { failure() } }
+        if: ${{ failure() }}
         shell: pwsh
         run: |
           if (Test-Path result-${{ matrix.platform }}-windows) {
