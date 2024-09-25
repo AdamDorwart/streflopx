@@ -238,6 +238,19 @@ jobs:
           Write-Output "Processor Architecture: $env:PROCESSOR_ARCHITECTURE"
           Write-Output "Number of Processors: $env:NUMBER_OF_PROCESSORS"
 
+      - name: Check executable bitness
+        shell: pwsh
+        run: |
+          $bytes = [System.IO.File]::ReadAllBytes("build\arithmeticTest.exe")
+          $machineType = [System.BitConverter]::ToUInt16($bytes, 0x3C)
+          $machineType = [System.BitConverter]::ToUInt16($bytes, $machineType + 4)
+          if ($machineType -eq 0x8664) {
+            Write-Output "64-bit executable"
+          } elseif ($machineType -eq 0x014c) {
+            Write-Output "32-bit executable"
+          } else {
+            Write-Output "Unknown executable type: $machineType"
+          }
       - name: List loaded modules
         shell: pwsh
         run: |
@@ -245,34 +258,65 @@ jobs:
           Select-Object -ExpandProperty Modules | 
           Format-Table -Property FileName, ModuleName, FileVersionInfo
 
-      - name: Run with Process Monitor
+      - name: Run executable with detailed error reporting
         shell: pwsh
         run: |
-          # Download and extract Process Monitor
-          Invoke-WebRequest -Uri "https://download.sysinternals.com/files/ProcessMonitor.zip" -OutFile "procmon.zip"
-          Expand-Archive -Path "procmon.zip" -DestinationPath "procmon"
-
-          # Start Process Monitor
-          Start-Process -FilePath "procmon\Procmon.exe" -ArgumentList "/AcceptEula /Quiet /Minimized /BackingFile procmon.pml"
-
-          # Run the executable
+          $env:PATH = "C:\mingw64\bin;$env:PATH"
+          cd build
           try {
-            .\build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+            $output = .\arithmeticTest.exe ..\result-${{ matrix.platform }}-windows 2>&1
+            $output | Out-File -FilePath ..\arithmetic_test_output.txt
           } catch {
-            Write-Output "Executable failed with error: $_"
+            $_ | Out-File -FilePath ..\arithmetic_test_error.txt
+            Write-Output "Exit Code: $LASTEXITCODE"
+            Write-Output "Exception: $_"
+          }
+      # - name: Run with Process Monitor
+      #   shell: pwsh
+      #   run: |
+      #     # Download and extract Process Monitor
+      #     Invoke-WebRequest -Uri "https://download.sysinternals.com/files/ProcessMonitor.zip" -OutFile "procmon.zip"
+      #     Expand-Archive -Path "procmon.zip" -DestinationPath "procmon"
+      #
+      #     # Start Process Monitor
+      #     Start-Process -FilePath "procmon\Procmon.exe" -ArgumentList "/AcceptEula /Quiet /Minimized /BackingFile procmon.pml"
+      #
+      #     # Run the executable
+      #     try {
+      #       .\build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+      #     } catch {
+      #       Write-Output "Executable failed with error: $_"
+      #     }
+      #
+      #     # Stop Process Monitor
+      #     Stop-Process -Name "Procmon*"
+      #
+      #     # Convert the log to CSV
+      #     .\procmon\Procmon.exe /OpenLog procmon.pml /SaveAs procmon.csv
+      #
+      # - name: Upload Process Monitor results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: procmon-results-${{ matrix.platform }}
+      #     path: procmon.csv
+
+      - name: Check Windows Error Reports
+        shell: pwsh
+        run: |
+          Get-WinEvent -LogName Application -MaxEvents 10 | 
+          Where-Object { $_.Message -like "*arithmeticTest.exe*" } | 
+          Format-List > wer_report.txt
+          if (Test-Path wer_report.txt) {
+            Get-Content wer_report.txt
+          } else {
+            Write-Output "No Windows Error Reports found for arithmeticTest.exe"
           }
 
-          # Stop Process Monitor
-          Stop-Process -Name "Procmon*"
-
-          # Convert the log to CSV
-          .\procmon\Procmon.exe /OpenLog procmon.pml /SaveAs procmon.csv
-
-      - name: Upload Process Monitor results
+      - name: Upload Windows Error Report
         uses: actions/upload-artifact@v4
         with:
-          name: procmon-results-${{ matrix.platform }}
-          path: procmon.csv
+          name: wer-report-${{ matrix.platform }}
+          path: wer_report.txt
       # - name: Check if result file was created
       #   if: ${{ failure() }}
       #   shell: pwsh
