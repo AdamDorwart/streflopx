@@ -216,63 +216,62 @@ jobs:
       #   with:
       #     name: dll-dependencies-${{ matrix.platform }}
       #     path: dll_dependencies.txt
-      # - name: Run cross-compiled arithmetic test on Windows with verbose output
-      #   shell: cmd
+      - name: Run cross-compiled arithmetic test on Windows with verbose output
+        shell: cmd
+        run: |
+          build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+
+      # - name: Check executable details
+      #   shell: pwsh
       #   run: |
-      #     set WINEDEBUG=+loaddll
-      #     build\arithmeticTest.exe result-${{ matrix.platform }}-windows
-
-      - name: Check executable details
-        shell: pwsh
-        run: |
-          $file = Get-Item "build\arithmeticTest.exe"
-          $signature = Get-AuthenticodeSignature $file
-          Write-Output "File: $($file.Name)"
-          Write-Output "Size: $($file.Length) bytes"
-          Write-Output "Created: $($file.CreationTime)"
-          Write-Output "Last Modified: $($file.LastWriteTime)"
-          Write-Output "Binary Type: $((Get-Item $file).FileInfo.FileType)"
-          Write-Output "Signature Status: $($signature.Status)"
-
-      - name: Check system architecture
-        shell: pwsh
-        run: |
-          Write-Output "Processor Architecture: $env:PROCESSOR_ARCHITECTURE"
-          Write-Output "Number of Processors: $env:NUMBER_OF_PROCESSORS"
-
-      - name: Check executable bitness
-        shell: pwsh
-        run: |
-          $bytes = [System.IO.File]::ReadAllBytes("build\arithmeticTest.exe")
-          $machineType = [System.BitConverter]::ToUInt16($bytes, 0x3C)
-          $machineType = [System.BitConverter]::ToUInt16($bytes, $machineType + 4)
-          if ($machineType -eq 0x8664) {
-            Write-Output "64-bit executable"
-          } elseif ($machineType -eq 0x014c) {
-            Write-Output "32-bit executable"
-          } else {
-            Write-Output "Unknown executable type: $machineType"
-          }
-      - name: List loaded modules
-        shell: pwsh
-        run: |
-          Get-Process -Name "arithmeticTest" -ErrorAction SilentlyContinue | 
-          Select-Object -ExpandProperty Modules | 
-          Format-Table -Property FileName, ModuleName, FileVersionInfo
-
-      - name: Run executable with detailed error reporting
-        shell: pwsh
-        run: |
-          $env:PATH = "C:\mingw64\bin;$env:PATH"
-          cd build
-          try {
-            $output = .\arithmeticTest.exe ..\result-${{ matrix.platform }}-windows 2>&1
-            $output | Out-File -FilePath ..\arithmetic_test_output.txt
-          } catch {
-            $_ | Out-File -FilePath ..\arithmetic_test_error.txt
-            Write-Output "Exit Code: $LASTEXITCODE"
-            Write-Output "Exception: $_"
-          }
+      #     $file = Get-Item "build\arithmeticTest.exe"
+      #     $signature = Get-AuthenticodeSignature $file
+      #     Write-Output "File: $($file.Name)"
+      #     Write-Output "Size: $($file.Length) bytes"
+      #     Write-Output "Created: $($file.CreationTime)"
+      #     Write-Output "Last Modified: $($file.LastWriteTime)"
+      #     Write-Output "Binary Type: $((Get-Item $file).FileInfo.FileType)"
+      #     Write-Output "Signature Status: $($signature.Status)"
+      #
+      # - name: Check system architecture
+      #   shell: pwsh
+      #   run: |
+      #     Write-Output "Processor Architecture: $env:PROCESSOR_ARCHITECTURE"
+      #     Write-Output "Number of Processors: $env:NUMBER_OF_PROCESSORS"
+      #
+      # - name: Check executable bitness
+      #   shell: pwsh
+      #   run: |
+      #     $bytes = [System.IO.File]::ReadAllBytes("build\arithmeticTest.exe")
+      #     $machineType = [System.BitConverter]::ToUInt16($bytes, 0x3C)
+      #     $machineType = [System.BitConverter]::ToUInt16($bytes, $machineType + 4)
+      #     if ($machineType -eq 0x8664) {
+      #       Write-Output "64-bit executable"
+      #     } elseif ($machineType -eq 0x014c) {
+      #       Write-Output "32-bit executable"
+      #     } else {
+      #       Write-Output "Unknown executable type: $machineType"
+      #     }
+      # - name: List loaded modules
+      #   shell: pwsh
+      #   run: |
+      #     Get-Process -Name "arithmeticTest" -ErrorAction SilentlyContinue |
+      #     Select-Object -ExpandProperty Modules |
+      #     Format-Table -Property FileName, ModuleName, FileVersionInfo
+      #
+      # - name: Run executable with detailed error reporting
+      #   shell: pwsh
+      #   run: |
+      #     $env:PATH = "C:\mingw64\bin;$env:PATH"
+      #     cd build
+      #     try {
+      #       $output = .\arithmeticTest.exe ..\result-${{ matrix.platform }}-windows 2>&1
+      #       $output | Out-File -FilePath ..\arithmetic_test_output.txt
+      #     } catch {
+      #       $_ | Out-File -FilePath ..\arithmetic_test_error.txt
+      #       Write-Output "Exit Code: $LASTEXITCODE"
+      #       Write-Output "Exception: $_"
+      #     }
       # - name: Run with Process Monitor
       #   shell: pwsh
       #   run: |
