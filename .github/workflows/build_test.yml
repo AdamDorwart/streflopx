@@ -85,18 +85,19 @@ jobs:
           sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine g++-mingw-w64-x86-64-posix
           wine wineboot --init
 
+      - name: Copy MinGW-w64 runtime libraries
+        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
+        run: |
+          mkdir ${{github.workspace}}/build/
+          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll ${{github.workspace}}/build/
+          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll ${{github.workspace}}/build/
+          cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll ${{github.workspace}}/build/
+
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
-
-      - name: Copy MinGW-w64 runtime libraries
-        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
-        run: |
-          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll ${{github.workspace}}/build/
-          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll ${{github.workspace}}/build/
-          cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll ${{github.workspace}}/build/
 
       - name: Run arithmetic test
         shell: bash
