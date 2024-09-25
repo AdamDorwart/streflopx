@@ -233,6 +233,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     )
 endif()
 
+if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  add_custom_command(TARGET arithmeticTest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE_DIR:arithmeticTest>/libgcc_s_seh-1.dll
+      $<TARGET_FILE_DIR:arithmeticTest>/libstdc++-6.dll
+      $<TARGET_FILE_DIR:arithmeticTest>/libwinpthread-1.dll
+      $<TARGET_FILE_DIR:arithmeticTest>
+  )
+endif()
+
 # Installation
 install(TARGETS streflop streflop_libm
     ARCHIVE DESTINATION lib

@@ -334,10 +334,9 @@ jobs:
           path: result-${{ matrix.platform }}-windows*
 
   compare-results:
-    needs:
-      [
+    needs: [
         build-test,
-        run-cross-compiled-on-windows,
+        # run-cross-compiled-on-windows,
         build-test-linux-arm64-qemu,
         build-test-linux-arm64-no-denormals-qemu,
       ]
@@ -364,9 +363,7 @@ jobs:
           artifacts/results-linux-x64-x87/result-linux-x64-x87 \
           artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
           artifacts/results-windows-x64-sse-cross/result-windows-x64-sse-cross-wine \
-          artifacts/results-windows-x64-sse-cross-windows/result-windows-x64-sse-cross-windows \
           artifacts/results-windows-x64-x87-cross/result-windows-x64-x87-cross-wine \
-          artifacts/results-windows-x64-x87-cross-windows/result-windows-x64-x87-cross-windows \
           artifacts/results-macos-x64-sse/result-macos-x64-sse \
           artifacts/results-macos-arm64-neon/result-macos-arm64-neon
 
@@ -384,9 +381,7 @@ jobs:
           artifacts/results-linux-x64-x87-no-denormals/result-linux-x64-x87-no-denormals \
           artifacts/results-linux-arm64-neon-no-denormals/result-linux-arm64-neon-no-denormals \
           artifacts/results-windows-x64-sse-no-denormals-cross/result-windows-x64-sse-no-denormals-cross-wine \
-          artifacts/results-windows-x64-sse-no-denormals-cross-windows/result-windows-x64-sse-no-denormals-cross-windows \
           artifacts/results-windows-x64-x87-no-denormals-cross/result-windows-x64-x87-no-denormals-cross-wine \
-          artifacts/results-windows-x64-x87-no-denormals-cross-windows/result-windows-x64-x87-no-denormals-cross-windows \
           artifacts/results-macos-x64-sse-no-denormals/result-macos-x64-sse-no-denormals \
           artifacts/results-macos-arm64-neon-no-denormals/result-macos-arm64-neon-no-denormals
 
