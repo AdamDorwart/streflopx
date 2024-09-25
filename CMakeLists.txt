@@ -3,6 +3,11 @@ project(streflop VERSION 0.4 LANGUAGES CXX C)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+if(CMAKE_CROSSCOMPILING)
+    set(CMAKE_SYSTEM_NAME Windows)
+    set(CMAKE_CROSSCOMPILING_EMULATOR wine)
+endif()
+
 # If you want to handle multi-configuration generators (like Visual Studio)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)

@@ -30,25 +30,36 @@ jobs:
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: ubuntu-latest
             platform: linux-x64-x87
-            base_flags:
+            base_flags: -DSTREFLOP_X87=ON
           - os: ubuntu-latest
             platform: linux-x64-x87-no-denormals
             base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # Cross-compilation for Windows on Linux
+          - os: ubuntu-latest
+            platform: windows-x64-sse-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake
+          - os: ubuntu-latest
+            platform: windows-x64-sse-no-denormals-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: windows-x64-x87-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON
+          - os: ubuntu-latest
+            platform: windows-x64-x87-no-denormals-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON -DSTREFLOP_NO_DENORMALS=ON
+          # Actual Windows runners (commented out for now)
           # - os: windows-latest
-          #   platform: windows-x64-soft
-          #   base_flags: -DSTREFLOP_SOFT=ON
-          - os: windows-latest
-            platform: windows-x64-sse
-            base_flags:
-          - os: windows-latest
-            platform: windows-x64-sse-no-denormals
-            base_flags: -DSTREFLOP_NO_DENORMALS=ON
-          - os: windows-latest
-            platform: windows-x64-x87
-            base_flags:
-          - os: windows-latest
-            platform: windows-x64-x87-no-denormals
-            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          #   platform: windows-x64-sse
+          #   base_flags:
+          # - os: windows-latest
+          #   platform: windows-x64-sse-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: windows-latest
+          #   platform: windows-x64-x87
+          #   base_flags:
+          # - os: windows-latest
+          #   platform: windows-x64-x87-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
           - os: macos-13
             platform: macos-x64-sse
             base_flags:
@@ -66,6 +77,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies for cross-compilation
+        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wine g++-mingw-w64-x86-64-posix
+
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
 
@@ -76,22 +93,25 @@ jobs:
         shell: bash
         working-directory: ${{github.workspace}}/build
         run: |
-          if [ "${{ matrix.config.os }}" == "windows-latest" ]; then
+          if [[ "${{ matrix.config.platform }}" == windows-*-cross ]]; then
+            wine arithmeticTest.exe ../result-${{ matrix.config.platform }}
+          elif [ "${{ matrix.config.os }}" == "windows-latest" ]; then
             ./arithmeticTest.exe ../result-${{ matrix.config.platform }}
           else
             ./arithmeticTest ../result-${{ matrix.config.platform }}
           fi
 
       - name: Setup debug SSH
-        # if: ${{ failure() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-        if: ${{ failure () }}
+        if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
 
       - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: results-${{ matrix.config.platform }}
-          path: result-${{ matrix.config.platform }}*
+          path: |
+            result-${{ matrix.config.platform }}*
+            ${{github.workspace}}/build/arithmeticTest*
   build-test-linux-arm64-qemu:
     runs-on: ubuntu-latest
     steps:
@@ -148,10 +168,40 @@ jobs:
           name: results-linux-arm64-neon-no-denormals
           path: result-linux-arm64-neon-no-denormals*
 
+  run-cross-compiled-on-windows:
+    needs: build-test
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform:
+          - windows-x64-sse-cross
+          - windows-x64-sse-no-denormals-cross
+          - windows-x64-x87-cross
+          - windows-x64-x87-no-denormals-cross
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: download cross-compiled executable
+        uses: actions/download-artifact@v4
+        with:
+          name: results-${{ matrix.platform }}
+
+      - name: run cross-compiled arithmetic test on windows
+        shell: cmd
+        run: |
+          arithmetictest.exe result-${{ matrix.platform }}-windows
+
+      - name: upload windows results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.platform }}-windows
+          path: result-${{ matrix.platform }}-windows*
+
   compare-results:
     needs:
       [
         build-test,
+        run-cross-compiled-on-windows,
         build-test-linux-arm64-qemu,
         build-test-linux-arm64-no-denormals-qemu,
       ]
@@ -177,8 +227,10 @@ jobs:
           artifacts/results-linux-x64-sse/result-linux-x64-sse \
           artifacts/results-linux-x64-x87/result-linux-x64-x87 \
           artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
-          artifacts/results-windows-x64-sse/result-windows-x64-sse \
-          artifacts/results-windows-x64-x87/result-windows-x64-x87 \
+          artifacts/results-windows-x64-sse-cross/result-windows-x64-sse-cross-wine \
+          artifacts/results-windows-x64-sse-cross-windows/result-windows-x64-sse-cross-windows \
+          artifacts/results-windows-x64-x87-cross/result-windows-x64-x87-cross-wine \
+          artifacts/results-windows-x64-x87-cross-windows/result-windows-x64-x87-cross-windows \
           artifacts/results-macos-x64-sse/result-macos-x64-sse \
           artifacts/results-macos-arm64-neon/result-macos-arm64-neon
 
@@ -195,8 +247,10 @@ jobs:
           artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals \
           artifacts/results-linux-x64-x87-no-denormals/result-linux-x64-x87-no-denormals \
           artifacts/results-linux-arm64-neon-no-denormals/result-linux-arm64-neon-no-denormals \
-          artifacts/results-windows-x64-sse-no-denormals/result-windows-x64-sse-no-denormals \
-          artifacts/results-windows-x64-x87-no-denormals/result-windows-x64-x87-no-denormals \
+          artifacts/results-windows-x64-sse-no-denormals-cross/result-windows-x64-sse-no-denormals-cross-wine \
+          artifacts/results-windows-x64-sse-no-denormals-cross-windows/result-windows-x64-sse-no-denormals-cross-windows \
+          artifacts/results-windows-x64-x87-no-denormals-cross/result-windows-x64-x87-no-denormals-cross-wine \
+          artifacts/results-windows-x64-x87-no-denormals-cross-windows/result-windows-x64-x87-no-denormals-cross-windows \
           artifacts/results-macos-x64-sse-no-denormals/result-macos-x64-sse-no-denormals \
           artifacts/results-macos-arm64-neon-no-denormals/result-macos-arm64-neon-no-denormals
 
