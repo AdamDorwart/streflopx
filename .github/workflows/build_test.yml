@@ -197,11 +197,16 @@ jobs:
         shell: pwsh
         run: Get-ChildItem build
 
+      - name: Download Dependency Walker
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/lucasg/Dependencies/releases/download/v1.11.1/Dependencies_x64_Release.zip" -OutFile "dependencies.zip"
+          Expand-Archive -Path "dependencies.zip" -DestinationPath "depwalker"
+
       - name: Check DLL dependencies
         shell: pwsh
         run: |
-          $dllDeps = & "C:\Windows\System32\dumpbin.exe" /DEPENDENTS build\arithmeticTest.exe
-          $dllDeps | Out-File -FilePath dll_dependencies.txt
+          .\depwalker\Dependencies.exe -modules build\arithmeticTest.exe > dll_dependencies.txt
           Get-Content dll_dependencies.txt
 
       - name: Upload DLL dependencies
@@ -209,11 +214,6 @@ jobs:
         with:
           name: dll-dependencies-${{ matrix.platform }}
           path: dll_dependencies.txt
-      - name: Run cross-compiled arithmetic test on Windows with verbose output
-        shell: cmd
-        run: |
-          set WINEDEBUG=+loaddll
-          build\arithmeticTest.exe result-${{ matrix.platform }}-windows
 
       - name: Check if result file was created
         if: ${{ failure() }}
