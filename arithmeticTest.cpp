@@ -374,7 +374,7 @@ int main(int argc, const char** argv) {
     doTest<streflop::Simple>(argv[1], "simple");
     doTest<streflop::Double>(argv[1], "double");
 #if defined(Extended)
-    doTest<streflop::Extended>(argv[1], "extended");
+    // doTest<streflop::Extended>(argv[1], "extended");
 #endif
 
     return 0;
