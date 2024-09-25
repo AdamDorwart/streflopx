@@ -214,21 +214,74 @@ jobs:
       #   with:
       #     name: dll-dependencies-${{ matrix.platform }}
       #     path: dll_dependencies.txt
-      - name: Run cross-compiled arithmetic test on Windows with verbose output
-        shell: cmd
-        run: |
-          set WINEDEBUG=+loaddll
-          build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+      # - name: Run cross-compiled arithmetic test on Windows with verbose output
+      #   shell: cmd
+      #   run: |
+      #     set WINEDEBUG=+loaddll
+      #     build\arithmeticTest.exe result-${{ matrix.platform }}-windows
 
-      - name: Check if result file was created
-        if: ${{ failure() }}
+      - name: Check executable details
         shell: pwsh
         run: |
-          if (Test-Path result-${{ matrix.platform }}-windows) {
-            Get-Content result-${{ matrix.platform }}-windows
-          } else {
-            Write-Output "Result file was not created"
+          $file = Get-Item "build\arithmeticTest.exe"
+          $signature = Get-AuthenticodeSignature $file
+          Write-Output "File: $($file.Name)"
+          Write-Output "Size: $($file.Length) bytes"
+          Write-Output "Created: $($file.CreationTime)"
+          Write-Output "Last Modified: $($file.LastWriteTime)"
+          Write-Output "Binary Type: $((Get-Item $file).FileInfo.FileType)"
+          Write-Output "Signature Status: $($signature.Status)"
+
+      - name: Check system architecture
+        shell: pwsh
+        run: |
+          Write-Output "Processor Architecture: $env:PROCESSOR_ARCHITECTURE"
+          Write-Output "Number of Processors: $env:NUMBER_OF_PROCESSORS"
+
+      - name: List loaded modules
+        shell: pwsh
+        run: |
+          Get-Process -Name "arithmeticTest" -ErrorAction SilentlyContinue | 
+          Select-Object -ExpandProperty Modules | 
+          Format-Table -Property FileName, ModuleName, FileVersionInfo
+
+      - name: Run with Process Monitor
+        shell: pwsh
+        run: |
+          # Download and extract Process Monitor
+          Invoke-WebRequest -Uri "https://download.sysinternals.com/files/ProcessMonitor.zip" -OutFile "procmon.zip"
+          Expand-Archive -Path "procmon.zip" -DestinationPath "procmon"
+
+          # Start Process Monitor
+          Start-Process -FilePath "procmon\Procmon.exe" -ArgumentList "/AcceptEula /Quiet /Minimized /BackingFile procmon.pml"
+
+          # Run the executable
+          try {
+            .\build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+          } catch {
+            Write-Output "Executable failed with error: $_"
           }
+
+          # Stop Process Monitor
+          Stop-Process -Name "Procmon*"
+
+          # Convert the log to CSV
+          .\procmon\Procmon.exe /OpenLog procmon.pml /SaveAs procmon.csv
+
+      - name: Upload Process Monitor results
+        uses: actions/upload-artifact@v4
+        with:
+          name: procmon-results-${{ matrix.platform }}
+          path: procmon.csv
+      # - name: Check if result file was created
+      #   if: ${{ failure() }}
+      #   shell: pwsh
+      #   run: |
+      #     if (Test-Path result-${{ matrix.platform }}-windows) {
+      #       Get-Content result-${{ matrix.platform }}-windows
+      #     } else {
+      #       Write-Output "Result file was not created"
+      #     }
 
       - name: upload windows results
         uses: actions/upload-artifact@v4
