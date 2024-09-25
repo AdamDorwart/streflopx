@@ -25,19 +25,29 @@ option(STREFLOP_NO_DENORMALS "Disable denormals" OFF)
 
 # Detect architecture and set appropriate flags
 if(NOT STREFLOP_SOFT)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86_64|AMD64)$")
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(CMAKE_CROSSCOMPILING)
+        if(DEFINED TARGET_ARCH)
+            set(DETECTED_PROCESSOR ${TARGET_ARCH})
+        else()
+            set(DETECTED_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})
+        endif()
+    else()
+        set(DETECTED_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})
+    endif()
+
+    if(DETECTED_PROCESSOR MATCHES "^(i.86|x86_64|AMD64)$")
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8 OR DETECTED_PROCESSOR MATCHES "^(x86_64|AMD64)$")
             message("Using STREFLOP_SSE")
             set(STREFLOP_SSE ON)
         else()
             message("Using STREFLOP_X87")
             set(STREFLOP_X87 ON)
         endif()
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+    elseif(DETECTED_PROCESSOR MATCHES "^(arm64|aarch64)$")
         message("Using STREFLOP_NEON")
         set(STREFLOP_NEON ON)
     else()
-        message(WARNING "Unknown architecture: ${CMAKE_SYSTEM_PROCESSOR}. Defaulting to STREFLOP_SOFT.")
+        message(WARNING "Unknown architecture: ${DETECTED_PROCESSOR}. Defaulting to STREFLOP_SOFT.")
         set(STREFLOP_SOFT ON)
     endif()
 else()
@@ -212,6 +222,16 @@ add_executable(randomTest randomTest.cpp)
 target_link_libraries(randomTest PRIVATE streflop)
 
 add_executable(compareFloats compareFloats.cpp)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set_target_properties(streflop PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+    
+    set_target_properties(arithmeticTest randomTest compareFloats PROPERTIES
+    WIN32_EXECUTABLE TRUE
+    )
+endif()
 
 # Installation
 install(TARGETS streflop streflop_libm
