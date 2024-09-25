@@ -104,7 +104,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           if [[ "${{ matrix.config.platform }}" == windows-*-cross ]]; then
-            wine arithmeticTest.exe ../result-${{ matrix.config.platform }}
+            wine arithmeticTest.exe ../result-${{ matrix.config.platform }}-wine
           elif [ "${{ matrix.config.os }}" == "windows-latest" ]; then
             ./arithmeticTest.exe ../result-${{ matrix.config.platform }}
           else
