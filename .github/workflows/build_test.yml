@@ -122,6 +122,7 @@ jobs:
           path: |
             result-${{ matrix.config.platform }}*
             ${{github.workspace}}/build/arithmeticTest*
+            ${{github.workspace}}/build/*.dll
   build-test-linux-arm64-qemu:
     runs-on: ubuntu-latest
     steps:
