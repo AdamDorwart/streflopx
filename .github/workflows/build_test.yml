@@ -82,7 +82,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine
+          sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine g++-mingw-w64-x86-64-posix
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
