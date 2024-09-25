@@ -83,19 +83,13 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine g++-mingw-w64-x86-64-posix
+          wine wineboot --init
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
-
-      - name: Configure Wine
-        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
-        run: |
-          # export DISPLAY=:99
-          # Xvfb :99 -screen 0 1024x768x16 &
-          wine wineboot --init
 
       - name: Copy MinGW-w64 runtime libraries
         if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
@@ -194,8 +188,6 @@ jobs:
           - windows-x64-x87-cross
           - windows-x64-x87-no-denormals-cross
     steps:
-      - uses: actions/checkout@v4
-
       - name: download cross-compiled executable
         uses: actions/download-artifact@v4
         with:
@@ -204,7 +196,7 @@ jobs:
       - name: run cross-compiled arithmetic test on windows
         shell: cmd
         run: |
-          arithmetictest.exe result-${{ matrix.platform }}-windows
+          build/arithmetictest.exe result-${{ matrix.platform }}-windows
 
       - name: upload windows results
         uses: actions/upload-artifact@v4
