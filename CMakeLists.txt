@@ -54,6 +54,7 @@ else()
     message("Using STREFLOP_SOFT")
 endif()
 
+add_definitions(-D__STDC__=1)
 # Compiler-specific flags
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-pipe -g -frename-registers -Wno-narrowing)
