@@ -37,16 +37,16 @@ jobs:
           # Cross-compilation for Windows on Linux
           - os: ubuntu-latest
             platform: windows-x64-sse-cross
-            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake
           - os: ubuntu-latest
             platform: windows-x64-sse-no-denormals-cross
-            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_NO_DENORMALS=ON
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_NO_DENORMALS=ON
           - os: ubuntu-latest
             platform: windows-x64-x87-cross
-            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON
           - os: ubuntu-latest
             platform: windows-x64-x87-no-denormals-cross
-            base_flags: -DCMAKE_TOOLCHAIN_FILE=toolchain/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON -DSTREFLOP_NO_DENORMALS=ON
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON -DSTREFLOP_NO_DENORMALS=ON
           # Actual Windows runners (commented out for now)
           # - os: windows-latest
           #   platform: windows-x64-sse
