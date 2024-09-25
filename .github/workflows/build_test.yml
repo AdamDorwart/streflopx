@@ -193,14 +193,37 @@ jobs:
         with:
           name: results-${{ matrix.platform }}
 
-      - name: List downloaded files
+      - name: List files in build directory
         shell: pwsh
-        run: Get-ChildItem -Recurse
+        run: Get-ChildItem build
 
-      - name: run cross-compiled arithmetic test on windows
+      - name: Check DLL dependencies
+        shell: pwsh
+        run: |
+          $dllDeps = & "C:\Windows\System32\dumpbin.exe" /DEPENDENTS build\arithmeticTest.exe
+          $dllDeps | Out-File -FilePath dll_dependencies.txt
+          Get-Content dll_dependencies.txt
+
+      - name: Upload DLL dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: dll-dependencies-${{ matrix.platform }}
+          path: dll_dependencies.txt
+      - name: Run cross-compiled arithmetic test on Windows with verbose output
         shell: cmd
         run: |
+          set WINEDEBUG=+loaddll
           build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+
+      - name: Check if result file was created
+        if: { { failure() } }
+        shell: pwsh
+        run: |
+          if (Test-Path result-${{ matrix.platform }}-windows) {
+            Get-Content result-${{ matrix.platform }}-windows
+          } else {
+            Write-Output "Result file was not created"
+          }
 
       - name: upload windows results
         uses: actions/upload-artifact@v4
