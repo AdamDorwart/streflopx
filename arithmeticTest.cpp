@@ -223,9 +223,6 @@ template<class FloatType> void doTest(string s, string name) {
     uint16_t lastMXCSR = getMXCSR();
     logFPCR(lastFPCR, lastFPCR, "Initial");
     logMXCSR(lastMXCSR, lastMXCSR, "Initial");
-    // std::cout << streflop::FE_ALL_EXCEPT << std::endl;
-    // std::cout << streflop::FE_INVALID << std::endl;
-    // feclearexcept(streflop::FE_ALL_EXCEPT);
     // Trap NaNs
     feraiseexcept(streflop::FE_INVALID);
 

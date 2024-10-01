@@ -1,22 +1,22 @@
 #include <iostream>
 #include <fstream>
-#include <cmath>
 #include <vector>
-#include <string>
-#include <iomanip>
-#include <limits>
 #include <cstring>
-#include <sstream>
 #include <cstdint>
+#include <limits>
+#include <algorithm>
+#include <iomanip>
+#include <sstream>
+#include <cmath>
 
 #pragma pack(push, 1)
 struct FileHeader {
-    char magic[4];  // Magic number to identify the file type
-    uint32_t version;  // Version of the file format
-    uint32_t dataType;  // 0 for Simple, 1 for Double, 2 for Extended
-    uint32_t dataSize;  // Size of each data element in bytes
-    uint32_t elementCount;  // Number of elements in the file
-    uint32_t extraFlags;  // For future use (e.g., to indicate if it's basic, nan, or lib data)
+    char magic[4];
+    uint32_t version;
+    uint32_t dataType;
+    uint32_t dataSize;
+    uint32_t elementCount;
+    uint32_t extraFlags;
 };
 #pragma pack(pop)
 
@@ -29,57 +29,49 @@ void writeToLog(const std::string& message) {
 
 template<typename T>
 bool isNaN(T value) {
-    return value != value;
+    return std::isnan(value);
 }
 
-bool isNaN(const std::vector<char>& bytes, size_t dataSize) {
-    if (dataSize == sizeof(float)) {
-        float value;
-        std::memcpy(&value, bytes.data(), sizeof(float));
-        return std::isnan(value);
-    } 
-    else if (dataSize == sizeof(double)) {
-        double value;
-        std::memcpy(&value, bytes.data(), sizeof(double));
-        return std::isnan(value);
-    }
-    else {
-        // For other sizes, we'll consider it not NaN
-        // You might want to implement a specific check for long double if needed
-        return false;
-    }
-}
+union FloatInt {
+    float f;
+    uint32_t i;
+};
+
+union DoubleInt {
+    double d;
+    uint64_t i;
+};
+
 struct FloatData {
     std::vector<char> rawData;
     size_t dataSize;
     FloatData(const std::vector<char>& data, size_t size) : rawData(data), dataSize(size) {}
 };
 
-long double bytesToLongDouble(const std::vector<char>& bytes, size_t dataSize) {
-    if (dataSize == sizeof(float)) {
-        float value;
-        std::memcpy(&value, &bytes[0], sizeof(float));
-        return static_cast<long double>(value);
-    } else if (dataSize == sizeof(double)) {
-        double value;
-        std::memcpy(&value, &bytes[0], sizeof(double));
-        return static_cast<long double>(value);
-    } else if (dataSize == sizeof(long double)) {
-        long double value;
-        std::memcpy(&value, &bytes[0], sizeof(long double));
-        return value;
-    } else {
-        return std::numeric_limits<long double>::quiet_NaN();
+// Endian-aware read function
+template<typename T>
+T readValue(std::ifstream& file) {
+    T value;
+    file.read(reinterpret_cast<char*>(&value), sizeof(T));
+    
+    // Check endianness
+    static const int endianCheck = 1;
+    if (*reinterpret_cast<const char*>(&endianCheck) == 1) {
+        // System is little-endian, reverse bytes
+        char* start = reinterpret_cast<char*>(&value);
+        std::reverse(start, start + sizeof(T));
     }
+    
+    return value;
 }
 
 std::vector<FloatData> readBinaryFile(const std::string& filename) {
-    std::ifstream file(filename.c_str(), std::ios::binary);
+    std::ifstream file(filename, std::ios::binary);
     std::vector<FloatData> data;
     
     if (!file) {
         std::cerr << "Error opening file: " << filename << std::endl;
-        return data;  // Return empty vector if file can't be opened
+        return data;
     }
     
     FileHeader header;
@@ -87,106 +79,164 @@ std::vector<FloatData> readBinaryFile(const std::string& filename) {
     
     if (memcmp(header.magic, "SREF", 4) != 0) {
         std::cerr << "Invalid file format: " << filename << std::endl;
-        return data;  // Return empty vector if file format is invalid
+        return data;
     }
     
     for (uint32_t i = 0; i < header.elementCount; ++i) {
         std::vector<char> buffer(header.dataSize);
-        file.read(&buffer[0], header.dataSize);
+        file.read(buffer.data(), header.dataSize);
         if (file.fail()) {
             std::cerr << "Error reading file: " << filename << std::endl;
             data.clear();
-            return data;  // Return empty vector if read error occurs
+            return data;
         }
+        
+        // Reverse bytes if system is little-endian
+        static const int endianCheck = 1;
+        if (*reinterpret_cast<const char*>(&endianCheck) == 1) {
+            std::reverse(buffer.begin(), buffer.end());
+        }
+        
         data.push_back(FloatData(buffer, header.dataSize));
     }
 
     return data;
 }
 
-// Helper function to convert bytes to uint64_t
-uint64_t bytesToUint64(const std::vector<char>& bytes, size_t dataSize) {
-    uint64_t result = 0;
-    if (dataSize > sizeof(uint64_t)) dataSize = sizeof(uint64_t);
-    std::memcpy(&result, bytes.data(), dataSize);
-    return result;
+template<typename T>
+T bytesToFloat(const std::vector<char>& bytes) {
+    T value;
+    std::memcpy(&value, bytes.data(), sizeof(T));
+    return value;
 }
 
-// ULP difference for floats
-int32_t floatUlpDiff(float a, float b) {
-    if (a == b) return 0;
-    if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<int32_t>::max();
-    
-    int32_t aInt, bInt;
-    std::memcpy(&aInt, &a, sizeof(float));
-    std::memcpy(&bInt, &b, sizeof(float));
-    
-    if ((aInt < 0) != (bInt < 0)) return std::numeric_limits<int32_t>::max();
-    
-    return std::abs(aInt - bInt);
-}
-
-// ULP difference for doubles
-int64_t doubleUlpDiff(double a, double b) {
+int64_t ulpDiff(float a, float b) {
     if (a == b) return 0;
     if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<int64_t>::max();
     
-    int64_t aInt, bInt;
-    std::memcpy(&aInt, &a, sizeof(double));
-    std::memcpy(&bInt, &b, sizeof(double));
+    FloatInt ai, bi;
+    ai.f = a;
+    bi.f = b;
     
-    if ((aInt < 0) != (bInt < 0)) return std::numeric_limits<int64_t>::max();
+    if ((ai.i & 0x80000000) != (bi.i & 0x80000000)) {
+        return std::numeric_limits<int64_t>::max();
+    }
     
-    return std::abs(aInt - bInt);
+    return std::abs(static_cast<int64_t>(ai.i) - static_cast<int64_t>(bi.i));
 }
 
-bool compareFloats(const FloatData& a, const FloatData& b, int maxUlpDiff) {
-    if (a.dataSize != b.dataSize) return false;
-
-    // Check for NaN
-    bool aIsNaN = isNaN(a.rawData, a.dataSize);
-    bool bIsNaN = isNaN(b.rawData, b.dataSize);
-    if (aIsNaN && bIsNaN) {
-        return true;  // Both are NaN, consider it an exact match
+int64_t ulpDiff(double a, double b) {
+    if (a == b) return 0;
+    if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<int64_t>::max();
+    
+    DoubleInt ai, bi;
+    ai.d = a;
+    bi.d = b;
+    
+    if ((ai.i & 0x8000000000000000ULL) != (bi.i & 0x8000000000000000ULL)) {
+        return std::numeric_limits<int64_t>::max();
     }
-    if (aIsNaN || bIsNaN) {
-        return false;  // One is NaN, the other isn't, so they're different
-    }
+    
+    return std::abs(static_cast<int64_t>(ai.i) - static_cast<int64_t>(bi.i));
+}
 
-    // First, compare raw bytes
-    if (std::memcmp(a.rawData.data(), b.rawData.data(), a.dataSize) == 0) {
-        return true;  // Exactly equal
-    }
+std::string floatToHex(float value) {
+    FloatInt fi;
+    fi.f = value;
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0') << std::setw(8) << fi.i;
+    return oss.str();
+}
 
-    // If not exactly equal, compare based on data size
+std::string doubleToHex(double value) {
+    DoubleInt di;
+    di.d = value;
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0') << std::setw(16) << di.i;
+    return oss.str();
+}
+
+std::string floatDiffDescription(const FloatData& a, const FloatData& b) {
+    std::ostringstream oss;
+    
     if (a.dataSize == sizeof(float)) {
-        float aFloat, bFloat;
-        std::memcpy(&aFloat, a.rawData.data(), sizeof(float));
-        std::memcpy(&bFloat, b.rawData.data(), sizeof(float));
-        return floatUlpDiff(aFloat, bFloat) <= maxUlpDiff;
-    } 
+        float aFloat = bytesToFloat<float>(a.rawData);
+        float bFloat = bytesToFloat<float>(b.rawData);
+        int64_t ulpDifference = ulpDiff(aFloat, bFloat);
+        
+        oss << "Float difference: " << std::scientific << std::setprecision(9)
+            << aFloat << " vs " << bFloat << "\n"
+            << "ULP difference: " << ulpDifference << "\n"
+            << "Hex representations: " << floatToHex(aFloat) << " vs " << floatToHex(bFloat);
+    }
     else if (a.dataSize == sizeof(double)) {
-        double aDouble, bDouble;
-        std::memcpy(&aDouble, a.rawData.data(), sizeof(double));
-        std::memcpy(&bDouble, b.rawData.data(), sizeof(double));
-        return doubleUlpDiff(aDouble, bDouble) <= maxUlpDiff;
+        double aDouble = bytesToFloat<double>(a.rawData);
+        double bDouble = bytesToFloat<double>(b.rawData);
+        int64_t ulpDifference = ulpDiff(aDouble, bDouble);
+        
+        oss << "Double difference: " << std::scientific << std::setprecision(17)
+            << aDouble << " vs " << bDouble << "\n"
+            << "ULP difference: " << ulpDifference << "\n"
+            << "Hex representations: " << doubleToHex(aDouble) << " vs " << doubleToHex(bDouble);
     }
     else {
-        // For other sizes (e.g., long double), compare as uint64_t
-        uint64_t aInt = bytesToUint64(a.rawData, a.dataSize);
-        uint64_t bInt = bytesToUint64(b.rawData, b.dataSize);
-        return std::abs(static_cast<int64_t>(aInt - bInt)) <= maxUlpDiff;
+        oss << "Unsupported float size for detailed comparison";
     }
+    
+    return oss.str();
+}
+
+bool compareFloats(const FloatData& a, const FloatData& b, int maxUlpDiff, std::string& diffDescription) {
+    if (a.dataSize != b.dataSize) {
+        diffDescription = "Data size mismatch";
+        return false;
+    }
+
+    if (a.dataSize == sizeof(float)) {
+        float aFloat = bytesToFloat<float>(a.rawData);
+        float bFloat = bytesToFloat<float>(b.rawData);
+        
+        if (std::isnan(aFloat) && std::isnan(bFloat)) return true;
+        if (std::isnan(aFloat) || std::isnan(bFloat)) {
+            diffDescription = "NaN mismatch";
+            return false;
+        }
+        
+        int64_t diff = ulpDiff(aFloat, bFloat);
+        if (diff <= maxUlpDiff) return true;
+        
+        diffDescription = floatDiffDescription(a, b);
+        return false;
+    }
+    else if (a.dataSize == sizeof(double)) {
+        double aDouble = bytesToFloat<double>(a.rawData);
+        double bDouble = bytesToFloat<double>(b.rawData);
+        
+        if (std::isnan(aDouble) && std::isnan(bDouble)) return true;
+        if (std::isnan(aDouble) || std::isnan(bDouble)) {
+            diffDescription = "NaN mismatch";
+            return false;
+        }
+        
+        int64_t diff = ulpDiff(aDouble, bDouble);
+        if (diff <= maxUlpDiff) return true;
+        
+        diffDescription = floatDiffDescription(a, b);
+        return false;
+    }
+    
+    diffDescription = "Unsupported float size";
+    return false;
 }
 
 template<typename T>
-void compareFiles(const std::vector<std::string>& filenames, const std::string& type, int epsilonMultiple) {
+void compareFiles(const std::vector<std::string>& filenames, const std::string& type, int maxUlpDiff) {
     if (filenames.size() < 2) {
         std::cout << "Need at least two files to compare for " << type << ".\n";
         return;
     }
 
-    std::vector<std::vector<FloatData> > allData;
+    std::vector<std::vector<FloatData>> allData;
     std::vector<FileHeader> headers;
 
     for (const auto& filename : filenames) {
@@ -196,7 +246,7 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
             continue;
         }
         
-        std::ifstream file(filename.c_str(), std::ios::binary);
+        std::ifstream file(filename, std::ios::binary);
         if (!file) {
             std::cerr << "Error opening file: " << filename << std::endl;
             continue;
@@ -215,10 +265,7 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
         return;
     }
 
-    long double epsilon = std::numeric_limits<long double>::epsilon() * epsilonMultiple;
-
     std::vector<int> exactMatches(allData.size(), 0);
-    std::vector<int> nearMatches(allData.size(), 0);
     std::vector<int> differences(allData.size(), 0);
 
     std::ostringstream log;
@@ -227,84 +274,54 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
         std::string shortName = filenames[i].substr(filenames[i].find_last_of("/\\") + 1);
         log << "File: " << shortName << ", Data size: " << headers[i].dataSize << " bytes\n";
     }
-    log << "Epsilon: " << std::scientific << std::setprecision(6) << epsilon 
-        << " (" << epsilonMultiple << " * machine epsilon)\n";
+    log << "Max ULP difference: " << maxUlpDiff << "\n";
     log << std::string(80, '-') << "\n\n";
 
     std::cout << log.str();
     writeToLog(log.str());
     log.str("");
     log.clear();
-    
-    const int maxUlpDiff = 4;  // Adjust this value based on your tolerance
 
     for (size_t i = 0; i < allData[0].size(); ++i) {
         const FloatData& baselineValue = allData[0][i];
         bool hasDifference = false;
 
         for (size_t j = 1; j < allData.size(); ++j) {
-            if (compareFloats(baselineValue, allData[j][i], maxUlpDiff)) {
+            std::string diffDescription;
+            if (compareFloats(baselineValue, allData[j][i], maxUlpDiff, diffDescription)) {
                 exactMatches[j]++;
             } else {
                 differences[j]++;
                 hasDifference = true;
+                
+                log << "Difference at element " << i << " between file 0 and file " << j << ":\n";
+                log << diffDescription << "\n\n";
             }
         }
 
         if (hasDifference) {
-            // log << "\n" << (hasDifference ? "Difference" : "Near match") << " at index " << i << ":\n";
-            // 
-            // log << std::left << std::setw(25) << "Baseline"
-            //     << std::setw(25) << std::scientific << std::setprecision(17) << baselineValue << " ";
-            // for (size_t k = 0; k < baselineValue.dataSize; ++k) {
-            //     log << std::hex << std::setw(2) << std::setfill('0') 
-            //         << static_cast<int>(baselineValue.rawData[k] & 0xFF) << " ";
-            // }
-            // log << std::dec << std::setfill(' ') << "\n";
-            //
-            // for (size_t j = 1; j < allData.size(); ++j) {
-            //     if (memcmp(&baselineValue.rawData[0], &allData[j][i].rawData[0], baselineValue.dataSize) != 0) {
-            //         std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
-            //         shortName = shortName.substr(0, 24);
-            //         long double comparisonLongDouble = bytesToLongDouble(allData[j][i].rawData, allData[j][i].dataSize);
-            //         log << std::left << std::setw(25) << shortName
-            //             << std::setw(25) << std::scientific << std::setprecision(17) << comparisonLongDouble << " ";
-            //         for (size_t k = 0; k < allData[j][i].dataSize; ++k) {
-            //             log << std::hex << std::setw(2) << std::setfill('0') 
-            //                 << static_cast<int>(allData[j][i].rawData[k] & 0xFF) << " ";
-            //         }
-            //         log << std::dec << std::setfill(' ') << "\n";
-            //         
-            //         long double diff = comparisonLongDouble - baselineLongDouble;
-            //         log << std::left << std::setw(25) << "Difference"
-            //             << std::scientific << std::setprecision(10) << diff << "\n";
-            //     }
-            // }
-            // log << "\n";
-            //
-            // writeToLog(log.str());
-            // log.str("");
-            // log.clear();
+            std::cout << log.str();
+            writeToLog(log.str());
+            log.str("");
+            log.clear();
         }
     }
-
+    
     std::ostringstream summary;
     summary << "Summary for " << type << ":\n";
     summary << std::left << std::setw(42) << "File"
             << std::setw(15) << "Exact Matches"
-            << std::setw(15) << "Near Matches"
-            << std::setw(15) << "Major Differences" << "\n";
-    summary << std::string(87, '-') << "\n";
+            << std::setw(15) << "Differences" << "\n";
+    summary << std::string(72, '-') << "\n";
 
     for (size_t j = 1; j < allData.size(); ++j) {
         std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
         shortName = shortName.substr(0, 41);
         summary << std::left << std::setw(42) << shortName
                 << std::setw(15) << exactMatches[j]
-                << std::setw(15) << nearMatches[j]
                 << std::setw(15) << differences[j] << "\n";
     }
-    summary << std::string(87, '-') << "\n\n";
+    summary << std::string(72, '-') << "\n\n";
 
     std::cout << summary.str();
     writeToLog(summary.str());
