@@ -32,6 +32,23 @@ bool isNaN(T value) {
     return value != value;
 }
 
+bool isNaN(const std::vector<char>& bytes, size_t dataSize) {
+    if (dataSize == sizeof(float)) {
+        float value;
+        std::memcpy(&value, bytes.data(), sizeof(float));
+        return std::isnan(value);
+    } 
+    else if (dataSize == sizeof(double)) {
+        double value;
+        std::memcpy(&value, bytes.data(), sizeof(double));
+        return std::isnan(value);
+    }
+    else {
+        // For other sizes, we'll consider it not NaN
+        // You might want to implement a specific check for long double if needed
+        return false;
+    }
+}
 struct FloatData {
     std::vector<char> rawData;
     size_t dataSize;
@@ -87,6 +104,81 @@ std::vector<FloatData> readBinaryFile(const std::string& filename) {
     return data;
 }
 
+// Helper function to convert bytes to uint64_t
+uint64_t bytesToUint64(const std::vector<char>& bytes, size_t dataSize) {
+    uint64_t result = 0;
+    if (dataSize > sizeof(uint64_t)) dataSize = sizeof(uint64_t);
+    std::memcpy(&result, bytes.data(), dataSize);
+    return result;
+}
+
+// ULP difference for floats
+int32_t floatUlpDiff(float a, float b) {
+    if (a == b) return 0;
+    if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<int32_t>::max();
+    
+    int32_t aInt, bInt;
+    std::memcpy(&aInt, &a, sizeof(float));
+    std::memcpy(&bInt, &b, sizeof(float));
+    
+    if ((aInt < 0) != (bInt < 0)) return std::numeric_limits<int32_t>::max();
+    
+    return std::abs(aInt - bInt);
+}
+
+// ULP difference for doubles
+int64_t doubleUlpDiff(double a, double b) {
+    if (a == b) return 0;
+    if (std::isnan(a) || std::isnan(b)) return std::numeric_limits<int64_t>::max();
+    
+    int64_t aInt, bInt;
+    std::memcpy(&aInt, &a, sizeof(double));
+    std::memcpy(&bInt, &b, sizeof(double));
+    
+    if ((aInt < 0) != (bInt < 0)) return std::numeric_limits<int64_t>::max();
+    
+    return std::abs(aInt - bInt);
+}
+
+bool compareFloats(const FloatData& a, const FloatData& b, int maxUlpDiff) {
+    if (a.dataSize != b.dataSize) return false;
+
+    // Check for NaN
+    bool aIsNaN = isNaN(a.rawData, a.dataSize);
+    bool bIsNaN = isNaN(b.rawData, b.dataSize);
+    if (aIsNaN && bIsNaN) {
+        return true;  // Both are NaN, consider it an exact match
+    }
+    if (aIsNaN || bIsNaN) {
+        return false;  // One is NaN, the other isn't, so they're different
+    }
+
+    // First, compare raw bytes
+    if (std::memcmp(a.rawData.data(), b.rawData.data(), a.dataSize) == 0) {
+        return true;  // Exactly equal
+    }
+
+    // If not exactly equal, compare based on data size
+    if (a.dataSize == sizeof(float)) {
+        float aFloat, bFloat;
+        std::memcpy(&aFloat, a.rawData.data(), sizeof(float));
+        std::memcpy(&bFloat, b.rawData.data(), sizeof(float));
+        return floatUlpDiff(aFloat, bFloat) <= maxUlpDiff;
+    } 
+    else if (a.dataSize == sizeof(double)) {
+        double aDouble, bDouble;
+        std::memcpy(&aDouble, a.rawData.data(), sizeof(double));
+        std::memcpy(&bDouble, b.rawData.data(), sizeof(double));
+        return doubleUlpDiff(aDouble, bDouble) <= maxUlpDiff;
+    }
+    else {
+        // For other sizes (e.g., long double), compare as uint64_t
+        uint64_t aInt = bytesToUint64(a.rawData, a.dataSize);
+        uint64_t bInt = bytesToUint64(b.rawData, b.dataSize);
+        return std::abs(static_cast<int64_t>(aInt - bInt)) <= maxUlpDiff;
+    }
+}
+
 template<typename T>
 void compareFiles(const std::vector<std::string>& filenames, const std::string& type, int epsilonMultiple) {
     if (filenames.size() < 2) {
@@ -94,7 +186,7 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
         return;
     }
 
-    std::vector<std::vector<FloatData>> allData;
+    std::vector<std::vector<FloatData> > allData;
     std::vector<FileHeader> headers;
 
     for (const auto& filename : filenames) {
@@ -143,65 +235,56 @@ void compareFiles(const std::vector<std::string>& filenames, const std::string& 
     writeToLog(log.str());
     log.str("");
     log.clear();
+    
+    const int maxUlpDiff = 4;  // Adjust this value based on your tolerance
 
     for (size_t i = 0; i < allData[0].size(); ++i) {
         const FloatData& baselineValue = allData[0][i];
-        long double baselineLongDouble = bytesToLongDouble(baselineValue.rawData, baselineValue.dataSize);
         bool hasDifference = false;
-        bool hasNearMatch = false;
 
         for (size_t j = 1; j < allData.size(); ++j) {
-            if (baselineValue.dataSize != allData[j][i].dataSize || 
-                memcmp(&baselineValue.rawData[0], &allData[j][i].rawData[0], baselineValue.dataSize) != 0) {
-                long double comparisonLongDouble = bytesToLongDouble(allData[j][i].rawData, allData[j][i].dataSize);
-                if (std::isnan(baselineLongDouble) && std::isnan(comparisonLongDouble)) {
-                    exactMatches[j]++;
-                } else if (std::abs(comparisonLongDouble - baselineLongDouble) <= epsilon) {
-                    nearMatches[j]++;
-                    hasNearMatch = true;
-                } else {
-                    differences[j]++;
-                    hasDifference = true;
-                }
-            } else {
+            if (compareFloats(baselineValue, allData[j][i], maxUlpDiff)) {
                 exactMatches[j]++;
+            } else {
+                differences[j]++;
+                hasDifference = true;
             }
         }
 
-        if (hasDifference || hasNearMatch) {
-            log << "\n" << (hasDifference ? "Difference" : "Near match") << " at index " << i << ":\n";
-            
-            log << std::left << std::setw(25) << "Baseline"
-                << std::setw(25) << std::scientific << std::setprecision(17) << baselineLongDouble << " ";
-            for (size_t k = 0; k < baselineValue.dataSize; ++k) {
-                log << std::hex << std::setw(2) << std::setfill('0') 
-                    << static_cast<int>(baselineValue.rawData[k] & 0xFF) << " ";
-            }
-            log << std::dec << std::setfill(' ') << "\n";
-
-            for (size_t j = 1; j < allData.size(); ++j) {
-                if (memcmp(&baselineValue.rawData[0], &allData[j][i].rawData[0], baselineValue.dataSize) != 0) {
-                    std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
-                    shortName = shortName.substr(0, 24);
-                    long double comparisonLongDouble = bytesToLongDouble(allData[j][i].rawData, allData[j][i].dataSize);
-                    log << std::left << std::setw(25) << shortName
-                        << std::setw(25) << std::scientific << std::setprecision(17) << comparisonLongDouble << " ";
-                    for (size_t k = 0; k < allData[j][i].dataSize; ++k) {
-                        log << std::hex << std::setw(2) << std::setfill('0') 
-                            << static_cast<int>(allData[j][i].rawData[k] & 0xFF) << " ";
-                    }
-                    log << std::dec << std::setfill(' ') << "\n";
-                    
-                    long double diff = comparisonLongDouble - baselineLongDouble;
-                    log << std::left << std::setw(25) << "Difference"
-                        << std::scientific << std::setprecision(10) << diff << "\n";
-                }
-            }
-            log << "\n";
-
-            writeToLog(log.str());
-            log.str("");
-            log.clear();
+        if (hasDifference) {
+            // log << "\n" << (hasDifference ? "Difference" : "Near match") << " at index " << i << ":\n";
+            // 
+            // log << std::left << std::setw(25) << "Baseline"
+            //     << std::setw(25) << std::scientific << std::setprecision(17) << baselineValue << " ";
+            // for (size_t k = 0; k < baselineValue.dataSize; ++k) {
+            //     log << std::hex << std::setw(2) << std::setfill('0') 
+            //         << static_cast<int>(baselineValue.rawData[k] & 0xFF) << " ";
+            // }
+            // log << std::dec << std::setfill(' ') << "\n";
+            //
+            // for (size_t j = 1; j < allData.size(); ++j) {
+            //     if (memcmp(&baselineValue.rawData[0], &allData[j][i].rawData[0], baselineValue.dataSize) != 0) {
+            //         std::string shortName = filenames[j].substr(filenames[j].find_last_of("/\\") + 1);
+            //         shortName = shortName.substr(0, 24);
+            //         long double comparisonLongDouble = bytesToLongDouble(allData[j][i].rawData, allData[j][i].dataSize);
+            //         log << std::left << std::setw(25) << shortName
+            //             << std::setw(25) << std::scientific << std::setprecision(17) << comparisonLongDouble << " ";
+            //         for (size_t k = 0; k < allData[j][i].dataSize; ++k) {
+            //             log << std::hex << std::setw(2) << std::setfill('0') 
+            //                 << static_cast<int>(allData[j][i].rawData[k] & 0xFF) << " ";
+            //         }
+            //         log << std::dec << std::setfill(' ') << "\n";
+            //         
+            //         long double diff = comparisonLongDouble - baselineLongDouble;
+            //         log << std::left << std::setw(25) << "Difference"
+            //             << std::scientific << std::setprecision(10) << diff << "\n";
+            //     }
+            // }
+            // log << "\n";
+            //
+            // writeToLog(log.str());
+            // log.str("");
+            // log.clear();
         }
     }
 
