@@ -283,6 +283,14 @@ template<class FloatType> void doTest(string s, string name) {
             lastMXCSR = currentMXCSR;
         }
     }
+    unsigned char* bytes = reinterpret_cast<unsigned char*>(&f);
+    
+    std::cout << "0x";
+    for (int i = sizeof(float) - 1; i >= 0; --i) {
+        std::cout << std::hex << std::setfill('0') << std::setw(2) 
+                  << static_cast<int>(bytes[i]);
+    }
+    std::cout << std::endl;
     basicfile.close();
 
     writeFileHeader<FloatType>(infnanfile, 10003, 1);  // 1 for NaN operations (5000 + 5000 + 3)
