@@ -180,10 +180,10 @@ template<class FloatType> inline void writeFloat(std::ofstream& of, FloatType f)
         nbytes = 10;  // Always use 10 bytes for Extended, regardless of its actual size
     }
     #endif
-    unsigned char* thefloat = reinterpret_cast<unsigned char*>(&f);
+    const char* thefloat = reinterpret_cast<const char*>(&f);
     long check = 1;
     // big endian OK, reverse little endian
-    if (*reinterpret_cast<unsigned char*>(&check) == 1) {
+    if (*reinterpret_cast<const char*>(&check) == 1) {
         std::vector<unsigned char> buffer(nbytes);
         for (int i=0; i<nbytes; ++i) buffer[i] = thefloat[nbytes-1-i];
         of.write(buffer.data(), nbytes);
