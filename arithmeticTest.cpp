@@ -184,10 +184,12 @@ template<class FloatType> inline void writeFloat(std::ofstream& of, FloatType f)
     long check = 1;
     // big endian OK, reverse little endian
     if (*reinterpret_cast<char*>(&check) == 1) {
+        std::cout << "Little endian detected" << std::endl;
         std::vector<char> buffer(nbytes);
         for (int i=0; i<nbytes; ++i) buffer[i] = thefloat[nbytes-1-i];
         of.write(buffer.data(), nbytes);
     } else {
+        std::cout << "Big endian detected" << std::endl;
         of.write(thefloat, nbytes);
     }
 }
