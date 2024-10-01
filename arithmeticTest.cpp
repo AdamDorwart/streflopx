@@ -219,10 +219,10 @@ template<class FloatType> void doTest(string s, string name) {
     
     FloatType f = 42;
 
-    // uint16_t lastFPCR = getFPCR();
-    // uint16_t lastMXCSR = getMXCSR();
-    // logFPCR(lastFPCR, lastFPCR, "Initial");
-    // logMXCSR(lastMXCSR, lastMXCSR, "Initial");
+    uint16_t lastFPCR = getFPCR();
+    uint16_t lastMXCSR = getMXCSR();
+    logFPCR(lastFPCR, lastFPCR, "Initial");
+    logMXCSR(lastMXCSR, lastMXCSR, "Initial");
     // std::cout << streflop::FE_ALL_EXCEPT << std::endl;
     // std::cout << streflop::FE_INVALID << std::endl;
     // feclearexcept(streflop::FE_ALL_EXCEPT);
@@ -235,53 +235,53 @@ template<class FloatType> void doTest(string s, string name) {
     for (int i = 0; i < 10000; ++i) {
         f = f + FloatType(1.0);
 
-        // uint16_t currentFPCR = getFPCR();
-        // if (currentFPCR != lastFPCR) {
-        //     std::cout << "FPCR changed at iteration " << i << " (before inner loop):" << std::endl;
-        //     logFPCR(lastFPCR, currentFPCR, "Before inner loop");
-        //     lastFPCR = currentFPCR;
-        // }
-        //
-        // uint16_t currentMXCSR = getMXCSR();
-        // if (currentMXCSR != lastMXCSR) {
-        //     std::cout << "MXCSR changed at iteration " << i << " (before inner loop):" << std::endl;
-        //     logMXCSR(lastMXCSR,currentMXCSR,"Before inner loop");
-        //     lastMXCSR = currentMXCSR;
-        // }
+        uint16_t currentFPCR = getFPCR();
+        if (currentFPCR != lastFPCR) {
+            std::cout << "FPCR changed at iteration " << i << " (before inner loop):" << std::endl;
+            logFPCR(lastFPCR, currentFPCR, "Before inner loop");
+            lastFPCR = currentFPCR;
+        }
+
+        uint16_t currentMXCSR = getMXCSR();
+        if (currentMXCSR != lastMXCSR) {
+            std::cout << "MXCSR changed at iteration " << i << " (before inner loop):" << std::endl;
+            logMXCSR(lastMXCSR,currentMXCSR,"Before inner loop");
+            lastMXCSR = currentMXCSR;
+        }
 
         for (int j = 0; j < 100; ++j) {
             f += FloatType(0.3) / f + FloatType(1.0);
             
-            // currentFPCR = getFPCR();
-            // if (currentFPCR != lastFPCR) {
-            //     std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
-            //     logFPCR(lastFPCR,currentFPCR, "During inner loop");
-            //     lastFPCR = currentFPCR;
-            // }
-            //
-            // currentMXCSR = getMXCSR();
-            // if (currentMXCSR != lastMXCSR) {
-            //     std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
-            //     logMXCSR(lastMXCSR,currentMXCSR,"During inner loop");
-            //     lastMXCSR = currentMXCSR;
-            // }
+            currentFPCR = getFPCR();
+            if (currentFPCR != lastFPCR) {
+                std::cout << "FPCR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
+                logFPCR(lastFPCR,currentFPCR, "During inner loop");
+                lastFPCR = currentFPCR;
+            }
+
+            currentMXCSR = getMXCSR();
+            if (currentMXCSR != lastMXCSR) {
+                std::cout << "MXCSR changed at iteration " << i << ", sub-iteration " << j << ":" << std::endl;
+                logMXCSR(lastMXCSR,currentMXCSR,"During inner loop");
+                lastMXCSR = currentMXCSR;
+            }
         }
 
         writeFloat(basicfile, f);
 
-        // currentFPCR = getFPCR();
-        // if (currentFPCR != lastFPCR) {
-        //     std::cout << "FPCR changed at iteration " << i << " (after inner loop):" << std::endl;
-        //     logFPCR(lastFPCR,currentFPCR,"After inner loop");
-        //     lastFPCR = currentFPCR;
-        // }
-        //
-        // currentMXCSR = getMXCSR();
-        // if (currentMXCSR != lastMXCSR) {
-        //     std::cout << "MXCSR changed at iteration " << i << " (after inner loop):" << std::endl;
-        //     logMXCSR(lastMXCSR,currentMXCSR,"After inner loop");
-        //     lastMXCSR = currentMXCSR;
-        // }
+        currentFPCR = getFPCR();
+        if (currentFPCR != lastFPCR) {
+            std::cout << "FPCR changed at iteration " << i << " (after inner loop):" << std::endl;
+            logFPCR(lastFPCR,currentFPCR,"After inner loop");
+            lastFPCR = currentFPCR;
+        }
+
+        currentMXCSR = getMXCSR();
+        if (currentMXCSR != lastMXCSR) {
+            std::cout << "MXCSR changed at iteration " << i << " (after inner loop):" << std::endl;
+            logMXCSR(lastMXCSR,currentMXCSR,"After inner loop");
+            lastMXCSR = currentMXCSR;
+        }
     }
     basicfile.close();
 
