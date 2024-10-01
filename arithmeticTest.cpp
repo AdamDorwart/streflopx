@@ -184,7 +184,7 @@ template<class FloatType> inline void writeFloat(std::ofstream& of, FloatType f)
     long check = 1;
     // big endian OK, reverse little endian
     if (*reinterpret_cast<const char*>(&check) == 1) {
-        std::vector<unsigned char> buffer(nbytes);
+        std::vector<const char> buffer(nbytes);
         for (int i=0; i<nbytes; ++i) buffer[i] = thefloat[nbytes-1-i];
         of.write(buffer.data(), nbytes);
     } else {
