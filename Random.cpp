@@ -16,8 +16,6 @@ using namespace std;
 #include "streflop.h"
 
 // Include endian-specific code
-#undef __BYTE_ORDER
-#undef __FLOAT_WORD_ORDER
 #include "System.h"
 
 namespace streflop {

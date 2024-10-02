@@ -11,7 +11,6 @@
 
 // Include generic version
 #include "streflop.h"
-
 // Macro to select the correct version of a softfloat function according to user flags
 #if N_SPECIALIZED == 96
 
@@ -35,11 +34,11 @@
 
 // This file may include System.h and SoftFloat
 #include "System.h"
-
 #include "softfloat/softfloat.h"
 
 namespace streflop {
 
+#include "SoftFloatWrapper.h"
 using namespace streflop::SoftFloat;
 
 
@@ -202,6 +201,19 @@ template<> struct FloatConverter<N_SPECIALIZED, double, 8> {
     }
 };
 
+// Specialization for double64 when C double type size is 8
+template<> struct FloatConverter<N_SPECIALIZED, long double, 8> {
+    static inline SF_TYPE
+    convert_from_float(const long double a_float) {
+        return SF_APPEND(floatx80_to_)(*reinterpret_cast<const floatx80*>(&a_float));
+    }
+    static inline double convert_to_float(SF_TYPE value) {
+        long double holder;
+        // And use that space for the result using the softfloat memory bit pattern equivalence property
+        *reinterpret_cast<floatx80*>(&holder) = SF_PREPEND(_to_floatx80)(value);
+        return holder;
+    }
+};
 // Specialization for floatx80 when C long double type size is 12 (there is 16 bit padding, endian dependent)
 template<> struct FloatConverter<N_SPECIALIZED, long double, 12> {
 // Little endian OK: both address are the same

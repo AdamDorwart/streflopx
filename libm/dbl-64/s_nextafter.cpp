@@ -26,7 +26,7 @@ static char rcsid[] = "$NetBSD: s_nextafter.c,v 1.8 1995/05/10 20:47:58 jtc Exp 
 #define __nexttoward __internal___nexttoward
 #define nexttoward __internal_nexttoward
 
-#include "math.h"
+#include "SMath.h"
 #include "math_private.h"
 #include "../streflop_libm_bridge.h"
 
@@ -75,8 +75,12 @@ namespace streflop_libm {
 	hy = hx&0x7ff00000;
 	if(hy>=0x7ff00000) {
 	  x = x+x;	/* overflow  */
+#if FLT_EVAL_METHOD != 0
+#if FLT_EVAL_METHOD != 1
 	  if (FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1)
 	    asm ("" : "=m"(x) : "m"(x));
+#endif
+#endif
 	  return x;	/* overflow  */
 	}
 	if(hy<0x00100000) {		/* underflow */

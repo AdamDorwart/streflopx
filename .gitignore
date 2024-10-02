@@ -1,6 +1,17 @@
 *.o
 libm/flt-target
 libm/dbl-target
+libm/ldbl-target
 libstreflop-sse.so.0.0.0
 libstreflop.a
 streflop.a
+/arithmeticTest*
+!/arithmeticTest.cpp
+/compareFloats*
+!/compareFloats.cpp
+/randomTest*
+!/randomTest.cpp
+float_comparison.log
+build
+.cache
+results

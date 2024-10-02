@@ -200,10 +200,10 @@ Double __exp1(Double x, Double xx, Double error) {
   if (n <= smallint) return 1.0; /*  if x->0 e^x=1 */
 
   if (n >= badint) {
-    if (n > infint) return(zero/zero);    /* x is NaN,  return invalid */
+    if (n > infint) return(inf.x()-inf.x());    /* x is NaN,  return invalid */
     if (n < infint) return ( (x>0) ? (hhuge*hhuge) : (tiny*tiny) );
     /* x is finite,  cause either overflow or underflow  */
-    if (junk1.i[LOW_HALF] != 0)  return (zero/zero);        /*  x is NaN  */
+    if (junk1.i[LOW_HALF] != 0)  return (inf.x()-inf.x());        /*  x is NaN  */
     return ((x>0)?inf.x():zero );   /* |x| = inf;  return either inf or 0 */
   }
 

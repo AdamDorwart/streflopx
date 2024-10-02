@@ -1,0 +1,265 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  # workflow_dispatch:
+  #   inputs:
+  #     debug_enabled:
+  #       type: boolean
+  #       description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
+  #       required: false
+  #       default: false
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        config:
+          - os: ubuntu-latest
+            platform: linux-x64-soft
+            base_flags: -DSTREFLOP_SOFT=ON
+          - os: ubuntu-latest
+            platform: linux-x64-sse
+            base_flags:
+          - os: ubuntu-latest
+            platform: linux-x64-sse-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: linux-x64-x87
+            base_flags: -DSTREFLOP_X87=ON
+          - os: ubuntu-latest
+            platform: linux-x64-x87-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: windows-x64-sse-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake
+          - os: ubuntu-latest
+            platform: windows-x64-sse-no-denormals-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_NO_DENORMALS=ON
+          - os: ubuntu-latest
+            platform: windows-x64-x87-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON
+          - os: ubuntu-latest
+            platform: windows-x64-x87-no-denormals-cross
+            base_flags: -DCMAKE_TOOLCHAIN_FILE=cmake/gcc_x86_64-pc-windows-gnu.cmake -DSTREFLOP_X87=ON -DSTREFLOP_NO_DENORMALS=ON
+          # - os: windows-latest
+          #   platform: windows-x64-sse
+          #   base_flags:
+          # - os: windows-latest
+          #   platform: windows-x64-sse-no-denormals
+          #   base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          # - os: windows-latest
+          #   platform: windows-x64-x87
+          #   base_flags: -DSTREFLOP_X87=ON
+          # - os: windows-latest
+          #   platform: windows-x64-x87-no-denormals
+          #   base_flags: -DSTREFLOP_x87=ON -DSTREFLOP_NO_DENORMALS=ON
+          - os: macos-13
+            platform: macos-x64-sse
+            base_flags:
+          - os: macos-13
+            platform: macos-x64-sse-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+          - os: macos-latest
+            platform: macos-arm64-neon
+            base_flags:
+          - os: macos-latest
+            platform: macos-arm64-neon-no-denormals
+            base_flags: -DSTREFLOP_NO_DENORMALS=ON
+
+    runs-on: ${{ matrix.config.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies for cross-compilation
+        if: startsWith(matrix.config.platform, 'windows') && matrix.config.os == 'ubuntu-latest'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y wine wine32 wine64 libwine libwine:i386 fonts-wine g++-mingw-w64-x86-64-posix
+          wine wineboot --init
+
+          mkdir ${{github.workspace}}/build/
+          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libgcc_s_seh-1.dll ${{github.workspace}}/build/
+          cp /usr/lib/gcc/x86_64-w64-mingw32/*-posix/libstdc++-6.dll ${{github.workspace}}/build/
+          cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll ${{github.workspace}}/build/
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build ${{ matrix.config.base_flags}} -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
+
+      - name: Run arithmetic test
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: |
+          if [[ "${{ matrix.config.platform }}" == windows-*-cross ]]; then
+            wine arithmeticTest.exe ../result-${{ matrix.config.platform }}-wine
+          elif [ "${{ matrix.config.os }}" == "windows-latest" ]; then
+            ./arithmeticTest.exe ../result-${{ matrix.config.platform }}
+          else
+            ./arithmeticTest ../result-${{ matrix.config.platform }}
+          fi
+
+      # - name: Setup debug SSH
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.config.platform }}
+          path: |
+            result-${{ matrix.config.platform }}*
+            ${{github.workspace}}/build/arithmeticTest*
+            ${{github.workspace}}/build/*.dll
+  build-test-linux-arm64-qemu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sandervocke/setup-qemu-container@v1
+        with:
+          container: gcc:latest
+          arch: arm64
+      - uses: sandervocke/setup-shell-wrapper@v1
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
+
+      - name: Run arithmetic test
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ./arithmeticTest ../result-linux-arm64-neon
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-linux-arm64-neon
+          path: result-linux-arm64-neon_*
+
+  build-test-linux-arm64-no-denormals-qemu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sandervocke/setup-qemu-container@v1
+        with:
+          container: gcc:latest
+          arch: arm64
+      - uses: sandervocke/setup-shell-wrapper@v1
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DSTREFLOP_NO_DENORMALS=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target arithmeticTest
+
+      - name: Run arithmetic test
+        shell: bash
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ./arithmeticTest ../result-linux-arm64-neon-no-denormals
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-linux-arm64-neon-no-denormals
+          path: result-linux-arm64-neon-no-denormals*
+
+  run-cross-compiled-on-windows:
+    needs: build-test
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform:
+          - windows-x64-sse-cross
+          - windows-x64-sse-no-denormals-cross
+          - windows-x64-x87-cross
+          - windows-x64-x87-no-denormals-cross
+    steps:
+      - name: download cross-compiled executable
+        uses: actions/download-artifact@v4
+        with:
+          name: results-${{ matrix.platform }}
+
+      - name: Run cross-compiled arithmetic test on Windows with verbose output
+        shell: cmd
+        run: |
+          build\arithmeticTest.exe result-${{ matrix.platform }}-windows
+
+      - name: upload windows results
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.platform }}-windows
+          path: result-${{ matrix.platform }}-windows*
+
+  compare-results:
+    needs:
+      [
+        build-test,
+        run-cross-compiled-on-windows,
+        build-test-linux-arm64-qemu,
+        build-test-linux-arm64-no-denormals-qemu,
+      ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -Rlah artifacts
+
+      - name: Build compare_floats
+        run: make compareFloats
+
+      - name: Compare results
+        run: |
+          ./compareFloats \
+          artifacts/results-linux-x64-soft/result-linux-x64-soft \
+          artifacts/results-linux-x64-sse/result-linux-x64-sse \
+          artifacts/results-linux-x64-x87/result-linux-x64-x87 \
+          artifacts/results-linux-arm64-neon/result-linux-arm64-neon \
+          artifacts/results-windows-x64-sse-cross/result-windows-x64-sse-cross-wine \
+          artifacts/results-windows-x64-sse-cross-windows/result-windows-x64-sse-cross-windows \
+          artifacts/results-windows-x64-x87-cross/result-windows-x64-x87-cross-wine \
+          artifacts/results-windows-x64-x87-cross-windows/result-windows-x64-x87-cross-windows \
+          artifacts/results-macos-x64-sse/result-macos-x64-sse \
+          artifacts/results-macos-arm64-neon/result-macos-arm64-neon
+
+      - name: Compare results (No Denormals)
+        run: |
+          echo "Software Float (With denormals) vs Linux-x64-SSE (No denormals)"
+          ./compareFloats \
+          artifacts/results-linux-x64-soft/result-linux-x64-soft \
+          artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals
+          echo
+          echo
+          echo
+          ./compareFloats \
+          artifacts/results-linux-x64-sse-no-denormals/result-linux-x64-sse-no-denormals \
+          artifacts/results-linux-x64-x87-no-denormals/result-linux-x64-x87-no-denormals \
+          artifacts/results-linux-arm64-neon-no-denormals/result-linux-arm64-neon-no-denormals \
+          artifacts/results-windows-x64-sse-no-denormals-cross/result-windows-x64-sse-no-denormals-cross-wine \
+          artifacts/results-windows-x64-sse-no-denormals-cross-windows/result-windows-x64-sse-no-denormals-cross-windows \
+          artifacts/results-windows-x64-x87-no-denormals-cross/result-windows-x64-x87-no-denormals-cross-wine \
+          artifacts/results-windows-x64-x87-no-denormals-cross-windows/result-windows-x64-x87-no-denormals-cross-windows \
+          artifacts/results-macos-x64-sse-no-denormals/result-macos-x64-sse-no-denormals \
+          artifacts/results-macos-arm64-neon-no-denormals/result-macos-arm64-neon-no-denormals
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: float_comparison.log
+          path: float_comparison.log

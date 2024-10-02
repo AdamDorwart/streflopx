@@ -9,7 +9,9 @@ endif
 
 TARGETS = flt-target dbl-target
 ifndef STREFLOP_SSE
+ifndef STREFLOP_NEON
 TARGETS += ldbl-target
+endif
 endif
 
 all: $(TARGETS)
